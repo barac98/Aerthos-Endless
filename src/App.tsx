@@ -18,8 +18,7 @@ export default function App() {
   const [totalDps, setTotalDps] = useState(0);
   const [lastHitTime, setLastHitTime] = useState(0);
   const lastHitTimeRef = React.useRef(0);
-  const enemyAttackTimerRef = React.useRef(0);
-  const [damageNumbers, setDamageNumbers] = useState<{ id: number; value: number; type: 'dmg' | 'heal' | 'enemy-dmg'; targetId?: string }[]>([]);
+  const [damageNumbers, setDamageNumbers] = useState<{ id: number; value: number }[]>([]);
 
   // Calculate Max HP for current floor
   useEffect(() => {
@@ -28,137 +27,121 @@ export default function App() {
     setEnemyHp(nextMaxHp);
   }, [store.currentFloor]);
 
+  // Debug Logging for Store State
+  useEffect(() => {
+    if (store.hasHydrated) {
+      console.log("[Aerthos] Store State Updated:", {
+        activeTeam: store.activeTeam,
+        ownedParagons: store.ownedParagons,
+        gold: store.gold,
+        essence: store.essence
+      });
+    }
+  }, [store.activeTeam, store.ownedParagons, store.hasHydrated, store.gold, store.essence]);
+
   // Global Game Tick
   useEffect(() => {
-    if (!store.hasHydrated) return;
+    if (!store.hasHydrated) {
+      console.log("[Aerthos] Waiting for hydration...");
+      return;
+    }
 
-    const TICK_RATE = 100;
+    console.log("[Aerthos] Combat loop started. Initial Team:", store.activeTeam);
+    console.log("[Aerthos] INITIAL_PARAGONS count:", INITIAL_PARAGONS.length);
+    console.log("[Aerthos] INITIAL_PARAGONS IDs:", INITIAL_PARAGONS.map(p => p.id));
+
+    const TICK_RATE = 100; // 100ms for smoother combat
     const interval = setInterval(() => {
+      // Use getState to get the most fresh values without triggering effect re-runs
       const state = useGameStore.getState();
-      const now = Date.now();
-      
-      // 1. Handle Respawn & Regen
-      state.ownedParagons.forEach(p => {
-        if (p.shatteredUntil > 0 && now >= p.shatteredUntil) {
-          state.respawnParagon(p.id);
-        } else if (p.currentHp < p.maxHp && p.shatteredUntil === 0) {
-          // Out of combat regen (10% per sec)
-          const regenAmount = (p.maxHp * 0.1 * TICK_RATE) / 1000;
-          state.updateParagonHp(p.id, regenAmount);
-        }
-      });
-
-      // 2. Combat Logic
       const activeIds = state.activeTeam.filter((id): id is string => id !== null);
-      const team = state.activeTeam.map((id, index) => {
-        if (!id) return null;
-        const paragon = INITIAL_PARAGONS.find(p => p.id === id);
-        const owned = state.ownedParagons.find(op => op.id === id);
-        if (!paragon || !owned || owned.currentHp <= 0) return null;
-        return { ...paragon, ...owned, slotIndex: index };
-      }).filter((p): p is any => !!p);
-
+      
+      // Explicitly find team members to avoid any filter issues
+      const team = activeIds.map(id => INITIAL_PARAGONS.find(p => p.id === id)).filter((p): p is typeof INITIAL_PARAGONS[0] => !!p);
+      
       let currentTotalDps = 0;
       team.forEach(p => {
-        const levelMult = 1 + (p.level - 1) * 0.1;
+        const owned = state.ownedParagons.find(op => op.id === p.id);
+        const levelMult = owned ? 1 + (owned.level - 1) * 0.1 : 1;
+        
+        // New Multipliers
         const temporalAtkMult = 1 + (state.temporalUpgrades.atk - 1) * 0.2;
         const permanentAtkMult = 1 + state.permanentUpgrades.atkMult * 0.1;
+        const temporalSpeedMult = 1 + (state.temporalUpgrades.speed - 1) * 0.1;
+        const permanentSpeedMult = 1 + state.permanentUpgrades.speedMult * 0.05;
+        const temporalCritMult = (state.temporalUpgrades.crit - 1) * 0.02;
+        const permanentCritMult = state.permanentUpgrades.critRate * 0.01;
         
-        // Grid Bonus: Back Row (6, 7, 8) gets +20% ATK
-        const gridAtkMult = (p.slotIndex >= 6) ? 1.2 : 1.0;
+        let dmg = p.baseAtk * levelMult * temporalAtkMult * permanentAtkMult;
         
-        let dmg = p.baseAtk * levelMult * temporalAtkMult * permanentAtkMult * gridAtkMult;
-        
+        // Simple ability logic
         if (p.id === 'kaelen-bold') dmg *= (1 + state.currentFloor * 0.05);
         if (p.id === 'oghul') dmg *= 1.2;
 
-        const temporalSpeedMult = 1 + (state.temporalUpgrades.speed - 1) * 0.1;
-        const permanentSpeedMult = 1 + state.permanentUpgrades.speedMult * 0.05;
         const effectiveAtkSpeed = p.atkSpeed * temporalSpeedMult * permanentSpeedMult;
-        
-        const temporalCritMult = (state.temporalUpgrades.crit - 1) * 0.02;
-        const permanentCritMult = state.permanentUpgrades.critRate * 0.01;
         const totalCrit = p.critChance + temporalCritMult + permanentCritMult;
         
+        // Apply Crit Average
         const critDmgMult = 1 + totalCrit;
         currentTotalDps += dmg * effectiveAtkSpeed * critDmgMult;
-
-        // Healing Logic (Elara heals frontline)
-        if (p.id === 'elara' && Math.random() < (0.1 * state.gameSpeed * TICK_RATE / 1000)) {
-          const frontLine = team.filter(tp => tp.slotIndex < 3);
-          if (frontLine.length > 0) {
-            const target = frontLine[Math.floor(Math.random() * frontLine.length)];
-            const healAmount = p.baseAtk * 2;
-            state.updateParagonHp(target.id, healAmount);
-            setDamageNumbers(prev => [...prev.slice(-10), { id: Date.now(), value: Math.floor(healAmount), type: 'heal', targetId: target.id }]);
-          }
-        }
       });
 
+      // Apply Game Speed
       const dpsWithSpeed = currentTotalDps * state.gameSpeed;
       const damagePerTick = (dpsWithSpeed * TICK_RATE) / 1000;
 
       if (currentTotalDps > 0) {
         setTotalDps(dpsWithSpeed);
+        
+        // Throttled hit animation (200ms)
+        const now = Date.now();
         if (now - lastHitTimeRef.current > 200) {
           setLastHitTime(now);
           lastHitTimeRef.current = now;
         }
+
+        // Only show damage numbers occasionally to avoid clutter at high speeds
         if (Math.random() < 0.2) {
-          setDamageNumbers(prev => [...prev.slice(-10), { id: Date.now(), value: Math.floor(dpsWithSpeed), type: 'dmg' }]);
+          setDamageNumbers(prev => [...prev.slice(-5), { id: Date.now(), value: Math.floor(dpsWithSpeed) }]);
         }
       } else {
         setTotalDps(0);
       }
 
-      // 3. Enemy Attacks Back
-      enemyAttackTimerRef.current += TICK_RATE * state.gameSpeed;
-      if (enemyAttackTimerRef.current >= 2000) {
-        enemyAttackTimerRef.current = 0;
-        
-        // Find Target
-        // Priority: Front (0,1,2) -> Mid (3,4,5) -> Back (6,7,8)
-        const front = team.filter(p => p.slotIndex < 3);
-        const mid = team.filter(p => p.slotIndex >= 3 && p.slotIndex < 6);
-        const back = team.filter(p => p.slotIndex >= 6);
-        
-        let targets = front.length > 0 ? front : (mid.length > 0 ? mid : back);
-        if (targets.length > 0) {
-          // Target highest aggro
-          const target = targets.reduce((prev, curr) => (curr.baseAggro > prev.baseAggro) ? curr : prev);
-          const enemyDmg = Math.floor(10 * Math.pow(1.1, state.currentFloor - 1));
-          const finalDmg = Math.max(1, enemyDmg - target.baseDef);
-          
-          state.updateParagonHp(target.id, -finalDmg);
-          setDamageNumbers(prev => [...prev.slice(-10), { id: Date.now(), value: finalDmg, type: 'enemy-dmg', targetId: target.id }]);
-        }
-      }
-
-      // 4. Update Enemy HP
+      // 2. Update Enemy HP & Progress
       setEnemyHp(prev => {
         const next = prev - damagePerTick;
         if (next <= 0) {
+          // Enemy Defeated - Schedule store updates to avoid React warning
           Promise.resolve().then(() => {
             const currentState = useGameStore.getState();
+            
+            // Gold Drop
             const goldGain = Math.floor(currentState.currentFloor * 10 * (1 + (currentState.permanentUpgrades.goldMult - 1) * 0.1));
             currentState.addGold(goldGain);
+            
+            // Soul Shard Drop
             const isBoss = currentState.currentFloor % 10 === 0;
             const shardMult = 1 + (currentState.permanentUpgrades.shardMult - 1) * 0.1;
+            
             if (isBoss) {
-              currentState.addSoulShards(Math.floor((Math.random() * 6 + 5) * shardMult));
+              const bossShards = Math.floor((Math.random() * 6 + 5) * shardMult);
+              currentState.addSoulShards(bossShards);
             } else if (Math.random() < 0.05) {
-              currentState.addSoulShards(Math.floor((Math.random() * 3 + 1) * shardMult));
+              const normalShards = Math.floor((Math.random() * 3 + 1) * shardMult);
+              currentState.addSoulShards(normalShards);
             }
+
             currentState.climbFloor();
           });
-          return 100;
+          return 100; // Temporary value, will be reset by floor effect
         }
         return next;
       });
     }, TICK_RATE);
 
     return () => clearInterval(interval);
-  }, [store.hasHydrated]);
+  }, [store.hasHydrated]); // Only depend on hydration status
 
   // Hydration Shield
   if (!store.hasHydrated) {
@@ -262,10 +245,10 @@ export default function App() {
                     referrerPolicy="no-referrer"
                   />
                   
-                  {/* Floating Damage Numbers (Enemy taking damage) */}
+                  {/* Floating Damage Numbers */}
                   <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
                     <AnimatePresence>
-                      {damageNumbers.filter(d => d.type === 'dmg').map((dmg) => (
+                      {damageNumbers.map((dmg) => (
                         <motion.span
                           key={dmg.id}
                           initial={{ opacity: 1, y: 0, scale: 0.5 }}
@@ -299,33 +282,26 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Team HUD: 3x3 Resonance Grid */}
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-[8px] text-white/20 uppercase tracking-widest font-bold">Resonance Grid</p>
-                <div className="grid grid-cols-3 gap-2 p-3 bg-black/40 rounded-xl border border-white/5">
-                  {store.activeTeam.map((paragonId, index) => {
-                    const paragon = INITIAL_PARAGONS.find(p => p.id === paragonId);
-                    const owned = store.ownedParagons.find(op => op.id === paragonId);
-                    if (!paragon || !owned) return <div key={index} className="w-12 h-18 sm:w-16 sm:h-24 rounded border border-white/5 bg-white/5" />;
-                    
-                    const effectiveMaxHp = (index < 3) ? owned.maxHp * 1.2 : owned.maxHp;
-
-                    return (
-                      <div key={index} className="flex flex-col items-center gap-1">
-                        <Card 
-                          paragon={paragon} 
-                          variant="small" 
-                          isActive={true}
-                          lastHitTime={lastHitTime}
-                          currentHp={owned.currentHp}
-                          maxHp={effectiveMaxHp}
-                          damageNumbers={damageNumbers}
-                        />
-                        <div className={`w-1 h-1 rounded-full ${owned.currentHp <= 0 ? 'bg-red-500' : 'bg-luminary glow-cyan'}`} />
-                      </div>
-                    );
-                  })}
-                </div>
+              {/* Team HUD */}
+              <div className="flex flex-wrap justify-center gap-3 sm:gap-4 max-h-[30vh] overflow-y-auto no-scrollbar p-2">
+                {unlockedParagons.map(p => (
+                  <div key={p.id} className="flex flex-col items-center gap-1 sm:gap-2">
+                    <motion.div 
+                      key={p.id}
+                    >
+                      <Card 
+                        paragon={p} 
+                        variant="small" 
+                        isActive={store.activeTeam.includes(p.id)}
+                        lastHitTime={lastHitTime}
+                      />
+                    </motion.div>
+                    <div className="flex items-center gap-1">
+                      {store.activeTeam.includes(p.id) && <div className="w-1 h-1 rounded-full bg-luminary glow-cyan" />}
+                      <span className="text-[8px] sm:text-[10px] uppercase tracking-widest text-white/70">{p.name}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}
@@ -410,109 +386,26 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col lg:flex-row gap-8 items-start justify-center"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center"
             >
-              {/* 3x3 Resonance Grid */}
-              <div className="flex flex-col items-center gap-4">
-                <div className="text-center mb-2">
-                  <h2 className="text-xl font-bold text-luminary tracking-widest uppercase">Resonance Grid</h2>
-                  <p className="text-[10px] text-white/40 uppercase tracking-widest">Front (Top) • Mid • Back (Bottom)</p>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-4 p-6 bg-black/40 rounded-2xl border border-white/5 relative">
-                  {/* Row Labels */}
-                  <div className="absolute -left-12 top-0 bottom-0 flex flex-col justify-around text-[8px] text-white/20 uppercase tracking-widest font-bold [writing-mode:vertical-rl] rotate-180">
-                    <span>Front Row (+20% HP)</span>
-                    <span>Middle Row</span>
-                    <span>Back Row (+20% ATK)</span>
-                  </div>
-
-                  {store.activeTeam.map((paragonId, index) => {
-                    const paragon = INITIAL_PARAGONS.find(p => p.id === paragonId);
-                    const owned = store.ownedParagons.find(op => op.id === paragonId);
-                    
-                    // Grid Bonus: Front Row (0, 1, 2) gets +20% HP
-                    const effectiveMaxHp = owned ? (index < 3 ? owned.maxHp * 1.2 : owned.maxHp) : 0;
-                    
-                    return (
-                      <div 
-                        key={index}
-                        className={`w-24 h-36 rounded-lg border-2 border-dashed flex items-center justify-center transition-all ${
-                          paragonId ? 'border-luminary/50 bg-luminary/5' : 'border-white/10 bg-white/5 hover:border-white/20'
-                        }`}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                          const id = e.dataTransfer.getData('paragonId');
-                          if (id) {
-                            // Swap or move
-                            const oldIndex = store.activeTeam.indexOf(id);
-                            if (oldIndex !== -1) {
-                              store.updateActiveTeam(oldIndex, store.activeTeam[index]);
-                            }
-                            store.updateActiveTeam(index, id);
-                          }
-                        }}
-                      >
-                        {paragon ? (
-                          <div className="relative group">
-                            <Card 
-                              paragon={paragon} 
-                              variant="small" 
-                              currentHp={owned?.currentHp}
-                              maxHp={effectiveMaxHp}
-                              damageNumbers={damageNumbers}
-                            />
-                            <button 
-                              onClick={() => store.updateActiveTeam(index, null)}
-                              className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="text-[10px] text-white/10 uppercase tracking-widest font-bold">Empty</div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Owned Paragons List */}
-              <div className="flex-1 w-full max-w-md">
-                <div className="text-center mb-6">
-                  <h2 className="text-xl font-bold text-white tracking-widest uppercase">Paragon Roster</h2>
-                  <p className="text-[10px] text-white/40 uppercase tracking-widest">Drag to assign to the grid</p>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  {unlockedParagons.map(p => {
-                    const owned = store.ownedParagons.find(op => op.id === p.id);
-                    const isActive = store.activeTeam.includes(p.id);
-                    return (
-                      <div 
-                        key={p.id}
-                        draggable={!isActive}
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData('paragonId', p.id);
-                        }}
-                        className={`cursor-grab active:cursor-grabbing ${isActive ? 'opacity-30 grayscale' : ''}`}
-                      >
-                        <Card 
-                          paragon={p} 
-                          variant="small"
-                          currentHp={owned?.currentHp}
-                          maxHp={owned?.maxHp}
-                        />
-                        <div className="mt-2 text-center">
-                          <p className="text-[10px] font-bold uppercase text-white/70">{p.name}</p>
-                          <p className="text-[8px] text-luminary uppercase">LVL {owned?.level}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              {unlockedParagons.map(p => (
+                <Card 
+                  key={p.id} 
+                  paragon={p} 
+                  isActive={store.activeTeam.includes(p.id)}
+                  onToggle={() => {
+                    const slotIndex = store.activeTeam.indexOf(p.id);
+                    if (slotIndex !== -1) {
+                      store.updateActiveTeam(slotIndex, null);
+                    } else {
+                      const emptySlot = store.activeTeam.indexOf(null);
+                      if (emptySlot !== -1) {
+                        store.updateActiveTeam(emptySlot, p.id);
+                      }
+                    }
+                  }}
+                />
+              ))}
             </motion.div>
           )}
 

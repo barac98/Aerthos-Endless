@@ -7,9 +7,6 @@ export interface Paragon {
   race: Race;
   affinity: Affinity;
   baseAtk: number;
-  baseHp: number;
-  baseDef: number;
-  baseAggro: number;
   atkSpeed: number;
   critChance: number;
   ability: string;
@@ -22,9 +19,6 @@ export interface OwnedParagon {
   id: string;
   level: number;
   xp: number;
-  currentHp: number;
-  maxHp: number;
-  shatteredUntil: number; // Timestamp when they can respawn
 }
 
 export type PermanentStatId = 'atkMult' | 'goldMult' | 'shardMult' | 'essenceGain' | 'critRate' | 'speedMult';
@@ -42,7 +36,7 @@ export interface GameStoreState {
   totalResets: number;
   
   // Team & Collection
-  activeTeam: (string | null)[]; // 9 slots (3x3 grid)
+  activeTeam: (string | null)[]; // 5 slots
   ownedParagons: OwnedParagon[];
   
   // Upgrades
@@ -73,8 +67,6 @@ export interface GameStoreActions {
   toggleMute: () => void;
   setGameSpeed: (speed: number) => void;
   updateActiveTeam: (slotIndex: number, paragonId: string | null) => void;
-  updateParagonHp: (paragonId: string, amount: number) => void;
-  respawnParagon: (paragonId: string) => void;
 }
 
 export type GameStore = GameStoreState & GameStoreActions;
@@ -86,9 +78,6 @@ export const INITIAL_PARAGONS: Paragon[] = [
     race: 'Human',
     affinity: 'Luminary',
     baseAtk: 10,
-    baseHp: 150,
-    baseDef: 10,
-    baseAggro: 100,
     atkSpeed: 1.0,
     critChance: 0.05,
     ability: 'DMG scales with floor height.',
@@ -102,9 +91,6 @@ export const INITIAL_PARAGONS: Paragon[] = [
     race: 'Vampire',
     affinity: 'Shadow',
     baseAtk: 15,
-    baseHp: 100,
-    baseDef: 5,
-    baseAggro: 50,
     atkSpeed: 0.8,
     critChance: 0.1,
     ability: 'Deals % Max HP damage (Boss Specialist).',
@@ -118,9 +104,6 @@ export const INITIAL_PARAGONS: Paragon[] = [
     race: 'Elf',
     affinity: 'Luminary',
     baseAtk: 8,
-    baseHp: 60,
-    baseDef: 2,
-    baseAggro: 20,
     atkSpeed: 1.5,
     critChance: 0.2,
     ability: 'High Crit Chance and Attack Speed scaling.',
@@ -134,9 +117,6 @@ export const INITIAL_PARAGONS: Paragon[] = [
     race: 'Giant',
     affinity: 'Luminary',
     baseAtk: 25,
-    baseHp: 250,
-    baseDef: 15,
-    baseAggro: 80,
     atkSpeed: 0.5,
     critChance: 0.02,
     ability: 'Massive AoE ground-slam damage.',
