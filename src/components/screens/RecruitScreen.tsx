@@ -14,27 +14,27 @@ export const RecruitScreen: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-start content-start"
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-8 justify-items-center content-start"
     >
       {INITIAL_PARAGONS.filter(p => !store.ownedParagons.some(op => op.id === p.id)).map(p => {
         return (
           <motion.div 
             layout
             key={p.id} 
-            className="flex flex-col items-center gap-4"
+            className="flex flex-col items-center gap-2 sm:gap-4"
           >
             <Card paragon={p} isLocked={true} />
             <button 
               onClick={() => store.recruitParagon(p.id)}
               disabled={store.soulShards < p.shardCost}
-              className={`px-6 py-2 rounded-full border transition-all flex items-center gap-2 ${
+              className={`px-3 py-1.5 sm:px-6 sm:py-2 rounded-full border transition-all flex items-center gap-1 sm:gap-2 ${
                 store.soulShards >= p.shardCost 
                   ? 'border-luminary text-luminary hover:bg-luminary hover:text-obsidian glow-cyan' 
                   : 'border-white/20 text-white/20 cursor-not-allowed'
               }`}
             >
-              <Shield className="w-4 h-4" />
-              Recruit: {p.shardCost.toLocaleString()} Shards
+              <Shield className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="text-[8px] sm:text-xs">Recruit: {p.shardCost}</span>
             </button>
           </motion.div>
         );

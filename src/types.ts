@@ -46,6 +46,7 @@ export interface GameStoreState {
     atk: number;
     speed: number;
     crit: number;
+    gold: number;
   };
   permanentUpgrades: Record<PermanentStatId, number>;
   altarSlots: PermanentStatId[];
@@ -64,7 +65,7 @@ export interface GameStoreActions {
   climbFloor: () => void;
   recruitParagon: (paragonId: string) => void;
   performSunder: () => void;
-  upgradeTemporal: (type: 'atk' | 'speed' | 'crit') => void;
+  upgradeTemporal: (type: 'atk' | 'speed' | 'crit' | 'gold') => void;
   purchaseAltarUpgrade: (slotIndex: number) => void;
   setHasHydrated: (state: boolean) => void;
   toggleMute: () => void;

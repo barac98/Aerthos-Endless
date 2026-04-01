@@ -49,7 +49,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
         x: screenEffect?.type === 'shake' ? [0, -10, 10, -10, 10, 0] : 0
       }}
       exit={{ opacity: 0, y: -20 }}
-      className="h-full flex flex-col items-center justify-center gap-6 relative"
+      className="h-full flex flex-col items-center justify-center gap-4 sm:gap-6 relative"
     >
       {/* Screen Flash Effect */}
       <AnimatePresence>
@@ -65,7 +65,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
       </AnimatePresence>
 
       {/* Floor Timer & Navigation */}
-      <div className="w-full flex flex-col items-center gap-2 mb-4">
+      <div className="w-full flex flex-col items-center gap-1 sm:gap-2 mb-1 sm:mb-4">
         <div className="flex items-center gap-6">
           <button 
             onClick={() => store.descendFloor()}
@@ -129,8 +129,8 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
       </div>
 
       {/* Enemy Section */}
-      <div className="relative flex flex-col items-center w-full max-w-md">
-        <div className="w-48 h-48 sm:w-64 sm:h-64 relative mb-4">
+      <div className="relative flex flex-col items-center w-full max-w-md scale-95 sm:scale-100">
+        <div className="w-48 h-48 sm:w-56 sm:h-56 relative mb-2">
           <div className="absolute inset-0 bg-shadow-magic/20 blur-3xl rounded-full animate-pulse" />
           <motion.img 
             key={`enemy-${store.currentFloor}`}
@@ -142,7 +142,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
             transition={{ duration: 0.2 }}
             src={enemyImageUrl} 
             alt="Enemy"
-            className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_30px_rgba(138,43,226,0.5)]"
+            className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_30px_rgba(138,43,226,0.5)] enemy-image"
             referrerPolicy="no-referrer"
           />
           
@@ -186,30 +186,30 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
           </div>
         </div>
         
-        <div className="w-full max-w-[280px] sm:max-w-xs h-3 sm:h-4 bg-white/5 rounded-full overflow-hidden obsidian-border">
+        <div className="w-full max-w-[240px] sm:max-w-[280px] h-2.5 sm:h-3 bg-white/5 rounded-full overflow-hidden obsidian-border">
           <motion.div 
             className="h-full bg-gradient-to-r from-shadow-magic to-red-600"
             initial={{ width: '100%' }}
             animate={{ width: `${(enemyHp / maxEnemyHp) * 100}%` }}
           />
         </div>
-        <p className="text-[10px] sm:text-xs font-runic mt-2 text-white/50">
+        <p className="text-[9px] sm:text-[10px] font-runic mt-1 text-white/50">
           {Math.ceil(enemyHp).toLocaleString()} / {maxEnemyHp.toLocaleString()} HP
         </p>
-        <div className="mt-4 flex items-center gap-2 px-3 sm:px-4 py-1 bg-white/5 rounded-full border border-white/10">
-          <Sword className="w-3 h-3 text-red-500" />
-          <span className="text-[8px] sm:text-[10px] font-runic text-white/70 uppercase tracking-widest">
+        <div className="mt-2 flex items-center gap-2 px-3 py-0.5 bg-white/5 rounded-full border border-white/10">
+          <Sword className="w-2.5 h-2.5 text-red-500" />
+          <span className="text-[8px] sm:text-[9px] font-runic text-white/70 uppercase tracking-widest">
             DPS: <span className="text-white font-bold">{Math.floor(totalDps).toLocaleString()}</span>
           </span>
         </div>
       </div>
 
       {/* Team HUD */}
-      <div className="flex flex-wrap justify-center gap-3 sm:gap-4 max-h-[30vh] overflow-y-auto no-scrollbar p-2">
+      <div className="flex flex-wrap justify-center gap-3 sm:gap-3 max-h-[35vh] overflow-y-auto no-scrollbar p-1">
         {unlockedParagons.map(p => {
           const ownedData = store.ownedParagons.find(op => op.id === p.id);
           return (
-            <div key={p.id} className="flex flex-col items-center gap-1 sm:gap-2">
+            <div key={p.id} className="flex flex-col items-center gap-1 sm:gap-1 scale-100 sm:scale-100">
               <motion.div 
                 key={p.id}
               >

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence } from 'motion/react';
+import { SpeedInsights } from "@vercel/speed-insights/react"
 import { Sword, Users, ShoppingCart, Sparkles, BookOpen, Coins, Zap, Shield } from 'lucide-react';
 import { useGameStore } from './store/useGameStore';
 import { INITIAL_PARAGONS } from './types';
@@ -246,7 +247,8 @@ export default function App() {
             
             // Gold Drop
             const goldBonus = goldBonusTimer > 0 ? 1.2 : 1;
-            const goldGain = Math.floor(currentState.currentFloor * 10 * (1 + (currentState.permanentUpgrades.goldMult - 1) * 0.1) * goldBonus);
+            const temporalGoldMult = 1 + (currentState.temporalUpgrades.gold - 1) * 0.15;
+            const goldGain = Math.floor(currentState.currentFloor * 10 * (1 + (currentState.permanentUpgrades.goldMult - 1) * 0.1) * goldBonus * temporalGoldMult);
             currentState.addGold(goldGain);
             
             // Soul Shard Drop
@@ -331,7 +333,7 @@ export default function App() {
       </header>
 
       {/* Main Viewport */}
-      <main className="flex-1 overflow-y-auto relative p-6">
+      <main className="flex-1 overflow-y-auto relative p-2 sm:p-6">
         <AnimatePresence mode="wait">
           {activeTab === 'tower' && (
             <TowerScreen 
@@ -379,6 +381,7 @@ export default function App() {
         <NavButton active={activeTab === 'altar'} onClick={() => setActiveTab('altar')} icon={<Sparkles />} label="Altar" />
         <NavButton active={activeTab === 'lore'} onClick={() => setActiveTab('lore')} icon={<BookOpen />} label="Lore" />
       </footer>
+      <SpeedInsights />
     </div>
   );
 }

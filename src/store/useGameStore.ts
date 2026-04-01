@@ -41,7 +41,7 @@ const mockStorage = {
             { id: 'kaelen-bold', level: 1, xp: 0, nextLevelXp: 100 },
             { id: 'silas-vane', level: 1, xp: 0, nextLevelXp: 100 }
           ],
-          temporalUpgrades: { atk: 1, speed: 1, crit: 1 },
+          temporalUpgrades: { atk: 1, speed: 1, crit: 1, gold: 1 },
           permanentUpgrades: {
             atkMult: 0,
             goldMult: 0,
@@ -50,7 +50,7 @@ const mockStorage = {
             critRate: 0,
             speedMult: 0,
           },
-          altarSlots: ['atkMult', 'goldMult', 'shardMult'],
+          altarSlots: ['atkMult', 'goldMult', 'shardMult', 'essenceGain', 'critRate', 'speedMult'],
           gameSpeed: 1,
           isMuted: false,
           lastSaved: Date.now(),
@@ -98,7 +98,7 @@ export const useGameStore = create<GameStore>()(
       totalResets: 0,
       activeTeam: [null, null, null, null, null],
       ownedParagons: [{ id: 'kaelen-bold', level: 1, xp: 0, nextLevelXp: 100 }],
-      temporalUpgrades: { atk: 1, speed: 1, crit: 1 },
+      temporalUpgrades: { atk: 1, speed: 1, crit: 1, gold: 1 },
       permanentUpgrades: {
         atkMult: 1,
         goldMult: 1,
@@ -107,7 +107,7 @@ export const useGameStore = create<GameStore>()(
         critRate: 1,
         speedMult: 1,
       },
-      altarSlots: ['atkMult', 'goldMult', 'shardMult'],
+      altarSlots: ['atkMult', 'goldMult', 'shardMult', 'essenceGain', 'critRate', 'speedMult'],
       gameSpeed: 1,
       autoProgress: true,
       isMuted: false,
@@ -169,7 +169,7 @@ export const useGameStore = create<GameStore>()(
           currentFloor: 1,
           essence: state.essence + totalEssence,
           totalResets: state.totalResets + 1,
-          temporalUpgrades: { atk: 1, speed: 1, crit: 1 }, // Wipe temporal power
+          temporalUpgrades: { atk: 1, speed: 1, crit: 1, gold: 1 }, // Wipe temporal power
           lastSaved: Date.now()
         };
       }),
@@ -192,9 +192,9 @@ export const useGameStore = create<GameStore>()(
         const statId = state.altarSlots[slotIndex];
         if (!statId) return state;
 
-        // Cost scales based on total level of all permanent upgrades
-        const totalLevels = Object.values(state.permanentUpgrades).reduce((a, b) => a + b, 0);
-        const cost = Math.floor(5 * Math.pow(1.5, totalLevels));
+        // Cost doubles for every upgrade in that specific slot
+        const currentLevel = state.permanentUpgrades[statId];
+        const cost = Math.floor(5 * Math.pow(2, currentLevel - 1));
         
         if (state.essence < cost) return state;
 
@@ -204,18 +204,9 @@ export const useGameStore = create<GameStore>()(
           [statId]: state.permanentUpgrades[statId] + 1
         };
 
-        // 2. Replace slot with new random stat not in other slots
-        const otherSlots = state.altarSlots.filter((_, i) => i !== slotIndex);
-        const availableStats = ALL_PERMANENT_STATS.filter(id => !otherSlots.includes(id));
-        const nextStatId = availableStats[Math.floor(Math.random() * availableStats.length)];
-        
-        const nextSlots = [...state.altarSlots];
-        nextSlots[slotIndex] = nextStatId;
-
         return {
           essence: state.essence - cost,
           permanentUpgrades: nextUpgrades,
-          altarSlots: nextSlots,
           lastSaved: Date.now()
         };
       }),
@@ -293,7 +284,7 @@ export const useGameStore = create<GameStore>()(
               critRate: 1,
               speedMult: 1,
             },
-            altarSlots: ['atkMult', 'goldMult', 'shardMult'],
+            altarSlots: ['atkMult', 'goldMult', 'shardMult', 'essenceGain', 'critRate', 'speedMult'],
           };
         }
         return nextState;

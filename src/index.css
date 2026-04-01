@@ -78,7 +78,7 @@ body {
 }
 
 /* Monster Image Styling */
-div#root:nth-of-type(1) > div:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > img:nth-of-type(1) {
+.enemy-image {
   transition: transform 0.1s ease-out, filter 0.1s ease-out;
   animation: float-monster 4s ease-in-out infinite;
 }
@@ -88,28 +88,12 @@ div#root:nth-of-type(1) > div:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-
   50% { transform: translateY(-10px); }
 }
 
-/* Character Image Styling - Slot 1 */
-div#root:nth-of-type(1) > div:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > img:nth-of-type(1) {
+/* Character Image Styling */
+.paragon-portrait {
   border: 1px solid rgba(0, 255, 255, 0.2);
   transition: filter 0.3s ease;
 }
 
-div#root:nth-of-type(1) > div:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > img:nth-of-type(1):hover {
+.paragon-portrait:hover {
   filter: brightness(1.2) contrast(1.1);
-}
-
-/* Character Image Styling - Slot 2 */
-div#root:nth-of-type(1) > div:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3) > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > img:nth-of-type(1) {
-  border: 1px solid rgba(0, 255, 255, 0.2);
-  transition: filter 0.3s ease;
-}
-
-div#root:nth-of-type(1) > div:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(1):hover {
-  filter: brightness(1.2) contrast(1.1);
-}
-
-/* Screen Container Alignment */
-div#root:nth-of-type(1) > div:nth-of-type(1) > main:nth-of-type(1) > div:nth-of-type(1) {
-  align-content: flex-start;
-  justify-content: flex-start;
 }

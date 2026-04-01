@@ -76,7 +76,7 @@ export const Card: React.FC<CardProps> = ({
               <img 
                 src={paragon.portrait} 
                 alt={paragon.name} 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover paragon-portrait"
                 referrerPolicy="no-referrer"
               />
               
@@ -149,7 +149,7 @@ export const Card: React.FC<CardProps> = ({
             <img 
               src={paragon.portrait} 
               alt={paragon.name} 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover paragon-portrait"
               referrerPolicy="no-referrer"
             />
 
@@ -210,36 +210,36 @@ export const Card: React.FC<CardProps> = ({
 
         {/* Back */}
         <div 
-          className="absolute inset-0 backface-hidden obsidian-border rounded-xl bg-obsidian p-6 flex flex-col rotate-y-180 cursor-pointer"
+          className="absolute inset-0 backface-hidden obsidian-border rounded-xl bg-obsidian p-2 sm:p-6 flex flex-col rotate-y-180 cursor-pointer overflow-hidden"
           style={{ transform: 'rotateY(180deg)' }}
           onClick={handleFlip}
         >
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-lg font-bold text-luminary">{paragon.name}</h3>
+          <div className="flex justify-between items-start mb-1 sm:mb-4">
+            <h3 className="text-xs sm:text-lg font-bold text-luminary truncate">{paragon.name}</h3>
           </div>
 
-          <div className="space-y-3 font-runic text-sm">
-            <div className="flex justify-between border-b border-white/5 pb-1">
+          <div className="space-y-0.5 sm:space-y-3 font-runic text-[9px] sm:text-sm">
+            <div className="flex justify-between border-b border-white/5 pb-0.5 sm:pb-1">
               <span className="text-white/50">ATK</span>
               <span className="text-white">{paragon.baseAtk}</span>
             </div>
-            <div className="flex justify-between border-b border-white/5 pb-1">
+            <div className="flex justify-between border-b border-white/5 pb-0.5 sm:pb-1">
               <span className="text-white/50">SPD</span>
               <span className="text-white">{paragon.atkSpeed}x</span>
             </div>
-            <div className="flex justify-between border-b border-white/5 pb-1">
+            <div className="flex justify-between border-b border-white/5 pb-0.5 sm:pb-1">
               <span className="text-white/50">CRIT</span>
               <span className="text-white">{(paragon.critChance * 100).toFixed(0)}%</span>
             </div>
           </div>
 
-          <div className="mt-6">
-            <h4 className="text-[10px] uppercase text-luminary mb-1 tracking-widest">Special Ability</h4>
-            <p className="text-xs text-white/80 leading-relaxed italic">"{paragon.ability}"</p>
+          <div className="mt-1 sm:mt-6">
+            <h4 className="text-[7px] sm:text-[10px] uppercase text-luminary mb-0.5 sm:mb-1 tracking-widest">Special Ability</h4>
+            <p className="text-[8px] sm:text-xs text-white/80 leading-tight sm:leading-relaxed italic line-clamp-3">"{paragon.ability}"</p>
           </div>
 
-          <div className="mt-auto pt-4 border-t border-white/10">
-            <p className="text-[10px] text-white/40 leading-tight">{paragon.description}</p>
+          <div className="mt-auto pt-1 sm:pt-4 border-t border-white/10">
+            <p className="text-[7px] sm:text-[10px] text-white/40 leading-tight line-clamp-2">{paragon.description}</p>
           </div>
         </div>
       </motion.div>

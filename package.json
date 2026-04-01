@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
+    "@vercel/speed-insights": "^2.0.0",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "localforage": "^1.10.0",
