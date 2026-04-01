@@ -13,6 +13,7 @@ import { RecruitScreen } from './components/screens/RecruitScreen';
 import { AltarScreen } from './components/screens/AltarScreen';
 import { LoreScreen } from './components/screens/LoreScreen';
 import { StatArchive } from './components/StatArchive';
+import { WelcomeBackModal } from './components/WelcomeBackModal';
 
 type Tab = 'tower' | 'training' | 'team' | 'recruit' | 'altar' | 'lore';
 
@@ -39,6 +40,10 @@ export default function App() {
   const [isTimerPaused, setIsTimerPaused] = useState(false);
   const [screenEffect, setScreenEffect] = useState<{ type: 'flash' | 'shake'; color: string } | null>(null);
 
+  // Offline Progress State
+  const [offlineRewards, setOfflineRewards] = useState<{ gold: number; xp: number; kills: number; timeAway: number } | null>(null);
+  const [showWelcomeBack, setShowWelcomeBack] = useState(false);
+
   const isTransitioningRef = useRef(false);
 
   const enemyImageUrl = useMemo(() => {
@@ -57,10 +62,22 @@ export default function App() {
     isTransitioningRef.current = false; // Unlock after HP is set
   }, [store.currentFloor]);
 
+  const hasCheckedOfflineRef = useRef(false);
+
   // Global Game Tick
   useEffect(() => {
     if (!store.hasHydrated) {
       return;
+    }
+
+    // Check for offline progress once on hydration
+    if (!hasCheckedOfflineRef.current) {
+      const rewards = store.calculateOfflineProgress();
+      if (rewards) {
+        setOfflineRewards(rewards);
+        setShowWelcomeBack(true);
+      }
+      hasCheckedOfflineRef.current = true;
     }
 
     const TICK_RATE = 100; // 100ms for smoother combat
@@ -381,6 +398,17 @@ export default function App() {
         <NavButton active={activeTab === 'altar'} onClick={() => setActiveTab('altar')} icon={<Sparkles />} label="Altar" />
         <NavButton active={activeTab === 'lore'} onClick={() => setActiveTab('lore')} icon={<BookOpen />} label="Lore" />
       </footer>
+      <WelcomeBackModal 
+        isOpen={showWelcomeBack} 
+        onClose={() => {
+          if (offlineRewards) {
+            store.claimOfflineRewards(offlineRewards.gold, offlineRewards.xp);
+          }
+          setShowWelcomeBack(false);
+        }} 
+        rewards={offlineRewards} 
+      />
+
       <SpeedInsights />
     </div>
   );

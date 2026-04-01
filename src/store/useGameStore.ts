@@ -112,6 +112,7 @@ export const useGameStore = create<GameStore>()(
       autoProgress: true,
       isMuted: false,
       lastSaved: Date.now(),
+      lastLogout: Date.now(),
       hasHydrated: false,
 
       // Actions
@@ -254,10 +255,84 @@ export const useGameStore = create<GameStore>()(
           lastSaved: Date.now()
         };
       }),
+
+      calculateOfflineProgress: () => {
+        const state = get();
+        const now = Date.now();
+        const secondsOffline = (now - state.lastLogout) / 1000;
+
+        if (secondsOffline < 60) return null;
+
+        // 1. Calculate Team DPS
+        const activeIds = state.activeTeam.filter((id): id is string => id !== null);
+        const team = activeIds.map(id => INITIAL_PARAGONS.find(p => p.id === id)).filter((p): p is typeof INITIAL_PARAGONS[0] => !!p);
+        
+        let currentTotalDps = 0;
+        team.forEach(p => {
+          const owned = state.ownedParagons.find(op => op.id === p.id);
+          const levelMult = owned ? 1 + (owned.level - 1) * 0.1 : 1;
+          const temporalAtkMult = 1 + (state.temporalUpgrades.atk - 1) * 0.2;
+          const permanentAtkMult = 1 + state.permanentUpgrades.atkMult * 0.1;
+          const temporalSpeedMult = 1 + (state.temporalUpgrades.speed - 1) * 0.1;
+          const permanentSpeedMult = 1 + state.permanentUpgrades.speedMult * 0.05;
+          const temporalCritMult = (state.temporalUpgrades.crit - 1) * 0.02;
+          const permanentCritMult = state.permanentUpgrades.critRate * 0.01;
+          
+          let dmg = p.baseAtk * levelMult * temporalAtkMult * permanentAtkMult;
+          if (p.id === 'kaelen-bold') dmg *= (1 + state.currentFloor * 0.05);
+          if (p.id === 'oghul') dmg *= 1.2;
+
+          const effectiveAtkSpeed = p.atkSpeed * temporalSpeedMult * permanentSpeedMult;
+          const totalCrit = p.critChance + temporalCritMult + permanentCritMult;
+          const critDmgMult = 1 + totalCrit;
+          const charDps = dmg * effectiveAtkSpeed * critDmgMult;
+          currentTotalDps += charDps;
+        });
+
+        if (currentTotalDps <= 0) return null;
+
+        // 2. Monster HP
+        const monsterHP = Math.floor(100 * Math.pow(1.15, state.currentFloor - 1));
+        
+        // 3. TTK
+        const TTK = Math.max(0.5, monsterHP / currentTotalDps);
+        
+        // 4. Total Kills (Capped at 12 hours)
+        const maxSeconds = 12 * 60 * 60;
+        const effectiveSeconds = Math.min(secondsOffline, maxSeconds);
+        const totalKills = Math.floor(effectiveSeconds / TTK);
+
+        if (totalKills <= 0) return null;
+
+        // 5. Rewards
+        const temporalGoldMult = 1 + (state.temporalUpgrades.gold - 1) * 0.15;
+        const baseGold = state.currentFloor * 10 * (1 + (state.permanentUpgrades.goldMult - 1) * 0.1) * temporalGoldMult;
+        const baseXP = 5; // Normal monster XP
+
+        const efficiency = 0.7;
+        const totalGold = Math.floor(totalKills * baseGold * efficiency);
+        const totalXP = Math.floor(totalKills * baseXP * efficiency);
+
+        return {
+          gold: totalGold,
+          xp: totalXP,
+          kills: totalKills,
+          timeAway: secondsOffline
+        };
+      },
+
+      claimOfflineRewards: (gold, xp) => {
+        get().addGold(gold);
+        get().addXpToTeam(xp);
+      },
     }),
     {
       name: 'aerthos-save-v2',
       version: 2,
+      partialize: (state) => {
+        const { ...rest } = state;
+        return { ...rest, lastLogout: Date.now() };
+      },
       migrate: (persistedState: any, version: number) => {
         console.log(`[Aerthos] Migrating from version ${version} to 2`);
         

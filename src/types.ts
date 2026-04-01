@@ -56,6 +56,7 @@ export interface GameStoreState {
   autoProgress: boolean;
   isMuted: boolean;
   lastSaved: number;
+  lastLogout: number;
   hasHydrated: boolean;
 }
 
@@ -74,6 +75,8 @@ export interface GameStoreActions {
   updateActiveTeam: (slotIndex: number, paragonId: string | null) => void;
   addXpToTeam: (amount: number) => void;
   descendFloor: () => void;
+  calculateOfflineProgress: () => { gold: number; xp: number; kills: number; timeAway: number } | null;
+  claimOfflineRewards: (gold: number, xp: number) => void;
 }
 
 export type GameStore = GameStoreState & GameStoreActions;
