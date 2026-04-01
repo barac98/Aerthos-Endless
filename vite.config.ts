@@ -19,6 +19,7 @@ export default defineConfig(({mode}) => {
           theme_color: '#0a0a0a',
           background_color: '#0a0a0a',
           display: 'standalone',
+          orientation: 'portrait',
           icons: [
             {
               src: 'https://picsum.photos/seed/aerthos-icon-192/192/192',
