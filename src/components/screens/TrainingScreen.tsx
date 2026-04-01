@@ -30,6 +30,7 @@ export const TrainingScreen: React.FC = () => {
           <div className="text-center">
             <h3 className="text-xs font-bold uppercase tracking-widest">Attack</h3>
             <p className="text-[9px] text-luminary uppercase">Level {store.temporalUpgrades.atk}</p>
+            <p className="text-[10px] text-red-500 font-bold mt-1">+{((store.temporalUpgrades.atk - 1) * 20).toFixed(0)}% DMG</p>
           </div>
           <button 
             {...atkHandlers}
@@ -49,6 +50,7 @@ export const TrainingScreen: React.FC = () => {
           <div className="text-center">
             <h3 className="text-xs font-bold uppercase tracking-widest">Speed</h3>
             <p className="text-[9px] text-luminary uppercase">Level {store.temporalUpgrades.speed}</p>
+            <p className="text-[10px] text-luminary font-bold mt-1">+{((store.temporalUpgrades.speed - 1) * 10).toFixed(0)}% SPD</p>
           </div>
           <button 
             {...speedHandlers}
@@ -68,6 +70,7 @@ export const TrainingScreen: React.FC = () => {
           <div className="text-center">
             <h3 className="text-xs font-bold uppercase tracking-widest">Crit</h3>
             <p className="text-[9px] text-luminary uppercase">Level {store.temporalUpgrades.crit}</p>
+            <p className="text-[10px] text-blue-500 font-bold mt-1">+{((store.temporalUpgrades.crit - 1) * 2).toFixed(0)}% RATE</p>
           </div>
           <button 
             {...critHandlers}

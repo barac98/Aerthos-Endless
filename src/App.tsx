@@ -34,7 +34,7 @@ export default function App() {
   const [paragonMp, setParagonMp] = useState<Record<string, number>>({});
   const [activeAbilities, setActiveAbilities] = useState<{ id: number; name: string; color: string }[]>([]);
   const [goldBonusTimer, setGoldBonusTimer] = useState(0);
-  const [floorTimer, setFloorTimer] = useState(30);
+  const [floorTimer, setFloorTimer] = useState(60);
   const [isTimerPaused, setIsTimerPaused] = useState(false);
   const [screenEffect, setScreenEffect] = useState<{ type: 'flash' | 'shake'; color: string } | null>(null);
 
@@ -43,7 +43,7 @@ export default function App() {
     const nextMaxHp = Math.floor(100 * Math.pow(1.15, store.currentFloor - 1));
     setMaxEnemyHp(nextMaxHp);
     setEnemyHp(nextMaxHp);
-    setFloorTimer(30);
+    setFloorTimer(60);
     setParagonMp({}); // Reset MP on floor change as requested
   }, [store.currentFloor]);
 
@@ -64,7 +64,7 @@ export default function App() {
         if (next <= 0) {
           // Timer hit 0 - Reset floor progress
           setEnemyHp(maxEnemyHp);
-          return 30;
+          return 60;
         }
         return next;
       });
