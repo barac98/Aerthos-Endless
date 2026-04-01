@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { Sword, Users, ShoppingCart, Sparkles, BookOpen, Coins, Zap, Shield } from 'lucide-react';
 import { useGameStore } from './store/useGameStore';
@@ -25,10 +25,10 @@ export default function App() {
   const [maxEnemyHp, setMaxEnemyHp] = useState(100);
   const [totalDps, setTotalDps] = useState(0);
   const [lastHitTime, setLastHitTime] = useState(0);
-  const lastHitTimeRef = React.useRef(0);
+  const lastHitTimeRef = useRef(0);
   const [lastAttackTimes, setLastAttackTimes] = useState<Record<string, number>>({});
   const [damageNumbers, setDamageNumbers] = useState<{ id: number; value: number; color: string; isCrit?: boolean }[]>([]);
-  const attackTimersRef = React.useRef<Record<string, number>>({});
+  const attackTimersRef = useRef<Record<string, number>>({});
 
   // Signature Ability State
   const [paragonMp, setParagonMp] = useState<Record<string, number>>({});
@@ -37,6 +37,12 @@ export default function App() {
   const [floorTimer, setFloorTimer] = useState(60);
   const [isTimerPaused, setIsTimerPaused] = useState(false);
   const [screenEffect, setScreenEffect] = useState<{ type: 'flash' | 'shake'; color: string } | null>(null);
+
+  const enemyImageUrl = useMemo(() => {
+    const monsterTypes = ['demon', 'wraith', 'golem', 'dragon', 'beholder', 'skeleton', 'gargoyle', 'chimera', 'hydra', 'lich'];
+    const type = monsterTypes[store.currentFloor % monsterTypes.length];
+    return `https://loremflickr.com/512/512/monster,${type},fantasy/all?lock=${store.currentFloor}`;
+  }, [store.currentFloor]);
 
   // Calculate Max HP for current floor
   useEffect(() => {
@@ -275,12 +281,6 @@ export default function App() {
       </div>
     );
   }
-
-  const enemyImageUrl = React.useMemo(() => {
-    const monsterTypes = ['demon', 'wraith', 'golem', 'dragon', 'beholder', 'skeleton', 'gargoyle', 'chimera', 'hydra', 'lich'];
-    const type = monsterTypes[store.currentFloor % monsterTypes.length];
-    return `https://loremflickr.com/512/512/monster,${type},fantasy/all?lock=${store.currentFloor}`;
-  }, [store.currentFloor]);
 
   return (
     <div className="h-screen flex flex-col bg-obsidian text-white font-gothic overflow-hidden">
