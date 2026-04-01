@@ -4,7 +4,11 @@ import { useGameStore } from '../../store/useGameStore';
 import { Card } from '../Card';
 import { INITIAL_PARAGONS } from '../../types';
 
-export const TeamScreen: React.FC = () => {
+interface TeamScreenProps {
+  paragonMp: Record<string, number>;
+}
+
+export const TeamScreen: React.FC<TeamScreenProps> = ({ paragonMp }) => {
   const store = useGameStore();
 
   const unlockedParagons = React.useMemo(() => 
@@ -18,13 +22,14 @@ export const TeamScreen: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center"
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-start content-start"
     >
       {unlockedParagons.map(p => (
         <Card 
           key={p.id} 
           paragon={p} 
           isActive={store.activeTeam.includes(p.id)}
+          mp={paragonMp[p.id] || 0}
           onToggle={() => {
             const slotIndex = store.activeTeam.indexOf(p.id);
             if (slotIndex !== -1) {

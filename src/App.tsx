@@ -30,11 +30,21 @@ export default function App() {
   const [damageNumbers, setDamageNumbers] = useState<{ id: number; value: number; color: string; isCrit?: boolean }[]>([]);
   const attackTimersRef = React.useRef<Record<string, number>>({});
 
+  // Signature Ability State
+  const [paragonMp, setParagonMp] = useState<Record<string, number>>({});
+  const [activeAbilities, setActiveAbilities] = useState<{ id: number; name: string; color: string }[]>([]);
+  const [goldBonusTimer, setGoldBonusTimer] = useState(0);
+  const [floorTimer, setFloorTimer] = useState(30);
+  const [isTimerPaused, setIsTimerPaused] = useState(false);
+  const [screenEffect, setScreenEffect] = useState<{ type: 'flash' | 'shake'; color: string } | null>(null);
+
   // Calculate Max HP for current floor
   useEffect(() => {
     const nextMaxHp = Math.floor(100 * Math.pow(1.15, store.currentFloor - 1));
     setMaxEnemyHp(nextMaxHp);
     setEnemyHp(nextMaxHp);
+    setFloorTimer(30);
+    setParagonMp({}); // Reset MP on floor change as requested
   }, [store.currentFloor]);
 
   // Global Game Tick
@@ -45,8 +55,23 @@ export default function App() {
 
     const TICK_RATE = 100; // 100ms for smoother combat
     const interval = setInterval(() => {
-      // Use getState to get the most fresh values without triggering effect re-runs
       const state = useGameStore.getState();
+      
+      // Update Floor Timer
+      setFloorTimer(prev => {
+        if (isTimerPaused) return prev;
+        const next = prev - (TICK_RATE / 1000) * state.gameSpeed;
+        if (next <= 0) {
+          // Timer hit 0 - Reset floor progress
+          setEnemyHp(maxEnemyHp);
+          return 30;
+        }
+        return next;
+      });
+
+      // Update Gold Bonus Timer
+      setGoldBonusTimer(prev => Math.max(0, prev - (TICK_RATE / 1000) * state.gameSpeed));
+
       const activeIds = state.activeTeam.filter((id): id is string => id !== null);
       
       // Explicitly find team members to avoid any filter issues
@@ -56,6 +81,7 @@ export default function App() {
       let currentTotalDps = 0;
       const newDamageNumbers: { id: number; value: number; color: string; isCrit?: boolean }[] = [];
       const attackingIds: string[] = [];
+      const triggeredAbilities: { name: string; color: string; damage?: number }[] = [];
 
       team.forEach(p => {
         const owned = state.ownedParagons.find(op => op.id === p.id);
@@ -82,6 +108,38 @@ export default function App() {
         const critDmgMult = 1 + totalCrit;
         const charDps = dmg * effectiveAtkSpeed * critDmgMult;
         currentTotalDps += charDps;
+
+        // Mana Generation (5 MP per second)
+        setParagonMp(prev => {
+          const currentMp = prev[p.id] || 0;
+          if (currentMp >= 100) return prev; // Already full, waiting for trigger
+          
+          const mpGain = (5 * TICK_RATE / 1000) * state.gameSpeed;
+          const nextMp = Math.min(100, currentMp + mpGain);
+          
+          if (nextMp >= 100) {
+            // Trigger Signature Ability
+            if (p.id === 'kaelen-bold') {
+              triggeredAbilities.push({ name: 'THRONE-BREAKER STRIKE', color: p.color, damage: charDps * 5 });
+            } else if (p.id === 'silas-vane') {
+              triggeredAbilities.push({ name: 'SHADOW HARVEST', color: p.color, damage: charDps * 2 });
+              setGoldBonusTimer(5);
+            } else if (p.id === 'elara') {
+              triggeredAbilities.push({ name: 'LUMINOUS RAIN', color: p.color });
+              // Luminous Rain: 10 hits of 40% DPS in 1s. 
+              // For simplicity in the tick, we'll just add the total damage now or spread it.
+              // Let's add it as a burst for now but visually it will be a volley.
+              totalDamageThisTick += charDps * 0.4 * 10;
+            } else if (p.id === 'oghul') {
+              triggeredAbilities.push({ name: 'MOUNTAIN CRUSHER', color: p.color, damage: charDps * 3 });
+              setIsTimerPaused(true);
+              setTimeout(() => setIsTimerPaused(false), 2000 / state.gameSpeed);
+            }
+            return { ...prev, [p.id]: 0 };
+          }
+          
+          return { ...prev, [p.id]: nextMp };
+        });
 
         // Attack Timer Logic
         const timer = attackTimersRef.current[p.id] || 0;
@@ -110,10 +168,34 @@ export default function App() {
         }
       });
 
+      // Apply Ability Damage
+      triggeredAbilities.forEach(ability => {
+        if (ability.damage) {
+          totalDamageThisTick += ability.damage;
+          newDamageNumbers.push({
+            id: Date.now() + Math.random(),
+            value: Math.floor(ability.damage),
+            color: ability.color,
+            isCrit: true
+          });
+        }
+        
+        // Add Ability Name Visual
+        const abilityId = Date.now() + Math.random();
+        setActiveAbilities(prev => [...prev, { id: abilityId, name: ability.name, color: ability.color }]);
+        setTimeout(() => {
+          setActiveAbilities(prev => prev.filter(a => a.id !== abilityId));
+        }, 2000);
+
+        // Screen Effect
+        setScreenEffect({ type: 'shake', color: ability.color });
+        setTimeout(() => setScreenEffect(null), 500);
+      });
+
       // Apply Game Speed to DPS display
       const dpsWithSpeed = currentTotalDps * state.gameSpeed;
 
-      if (totalDamageThisTick > 0) {
+      if (totalDamageThisTick > 0 || triggeredAbilities.length > 0) {
         setTotalDps(dpsWithSpeed);
         
         // Update individual attack times for animations
@@ -150,7 +232,8 @@ export default function App() {
             const currentState = useGameStore.getState();
             
             // Gold Drop
-            const goldGain = Math.floor(currentState.currentFloor * 10 * (1 + (currentState.permanentUpgrades.goldMult - 1) * 0.1));
+            const goldBonus = goldBonusTimer > 0 ? 1.2 : 1;
+            const goldGain = Math.floor(currentState.currentFloor * 10 * (1 + (currentState.permanentUpgrades.goldMult - 1) * 0.1) * goldBonus);
             currentState.addGold(goldGain);
             
             // Soul Shard Drop
@@ -239,12 +322,16 @@ export default function App() {
               lastAttackTimes={lastAttackTimes}
               damageNumbers={damageNumbers}
               enemyImageUrl={enemyImageUrl}
+              paragonMp={paragonMp}
+              activeAbilities={activeAbilities}
+              floorTimer={floorTimer}
+              screenEffect={screenEffect}
             />
           )}
 
           {activeTab === 'training' && <TrainingScreen />}
 
-          {activeTab === 'team' && <TeamScreen />}
+          {activeTab === 'team' && <TeamScreen paragonMp={paragonMp} />}
 
           {activeTab === 'recruit' && <RecruitScreen />}
 

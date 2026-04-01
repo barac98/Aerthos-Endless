@@ -13,6 +13,10 @@ interface TowerScreenProps {
   lastAttackTimes: Record<string, number>;
   damageNumbers: { id: number; value: number; color: string; isCrit?: boolean }[];
   enemyImageUrl: string;
+  paragonMp: Record<string, number>;
+  activeAbilities: { id: number; name: string; color: string }[];
+  floorTimer: number;
+  screenEffect: { type: 'flash' | 'shake'; color: string } | null;
 }
 
 export const TowerScreen: React.FC<TowerScreenProps> = ({
@@ -23,6 +27,10 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
   lastAttackTimes,
   damageNumbers,
   enemyImageUrl,
+  paragonMp,
+  activeAbilities,
+  floorTimer,
+  screenEffect,
 }) => {
   const store = useGameStore();
 
@@ -35,25 +43,46 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
     <motion.div 
       key="tower"
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ 
+        opacity: 1, 
+        y: 0,
+        x: screenEffect?.type === 'shake' ? [0, -10, 10, -10, 10, 0] : 0
+      }}
       exit={{ opacity: 0, y: -20 }}
-      className="h-full flex flex-col items-center justify-center gap-6"
+      className="h-full flex flex-col items-center justify-center gap-6 relative"
     >
+      {/* Screen Flash Effect */}
+      <AnimatePresence>
+        {screenEffect?.type === 'shake' && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.3, 0] }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 pointer-events-none z-[100]"
+            style={{ backgroundColor: screenEffect.color }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Floor Timer */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
+        <div className="text-[10px] uppercase tracking-widest text-white/40 mb-1">Floor Timer</div>
+        <div className={`text-2xl font-runic font-bold ${floorTimer < 10 ? 'text-red-500 animate-pulse' : 'text-luminary'}`}>
+          {floorTimer.toFixed(1)}s
+        </div>
+      </div>
+
       {/* Game Speed Toggle */}
-      <div className="flex items-center gap-2 p-1 bg-black/40 rounded-lg border border-white/5">
-        {[1, 2, 4].map(speed => (
-          <button
-            key={speed}
-            onClick={() => store.setGameSpeed(speed)}
-            className={`px-4 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
-              store.gameSpeed === speed 
-                ? 'bg-luminary text-black shadow-[0_0_15px_rgba(0,255,255,0.3)]' 
-                : 'text-white/40 hover:text-white/70'
-            }`}
-          >
-            x{speed}
-          </button>
-        ))}
+      <div className="absolute top-0 right-0 p-2">
+        <button
+          onClick={() => {
+            const nextSpeed = store.gameSpeed === 1 ? 2 : store.gameSpeed === 2 ? 4 : 1;
+            store.setGameSpeed(nextSpeed);
+          }}
+          className="px-4 py-1 bg-black/40 rounded-lg border border-white/10 text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-white/10 active:scale-95 shadow-[0_0_15px_rgba(0,255,255,0.1)]"
+        >
+          <span className="text-luminary">x{store.gameSpeed}</span>
+        </button>
       </div>
 
       {/* Enemy Section */}
@@ -74,7 +103,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
             referrerPolicy="no-referrer"
           />
           
-          {/* Floating Damage Numbers */}
+          {/* Floating Damage Numbers & Ability Names */}
           <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
             <AnimatePresence>
               {damageNumbers.map((dmg) => (
@@ -93,6 +122,22 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                   {dmg.isCrit && <span className="block text-[10px] uppercase tracking-tighter mb-[-4px]">Crit!</span>}
                   -{dmg.value}
                 </motion.span>
+              ))}
+
+              {activeAbilities.map((ability) => (
+                <motion.div
+                  key={ability.id}
+                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                  animate={{ opacity: 1, y: -60, scale: 1.2 }}
+                  exit={{ opacity: 0, scale: 1.5 }}
+                  className="absolute whitespace-nowrap font-bold tracking-[0.3em] text-lg sm:text-2xl italic"
+                  style={{ 
+                    color: ability.color,
+                    textShadow: `0 0 20px ${ability.color}`
+                  }}
+                >
+                  {ability.name}
+                </motion.div>
               ))}
             </AnimatePresence>
           </div>
@@ -128,6 +173,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                 variant="small" 
                 isActive={store.activeTeam.includes(p.id)}
                 lastHitTime={lastAttackTimes[p.id]}
+                mp={paragonMp[p.id] || 0}
               />
             </motion.div>
             <div className="flex items-center gap-1">

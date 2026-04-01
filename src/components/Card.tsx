@@ -9,17 +9,12 @@ interface CardProps {
   isLocked?: boolean;
   variant?: 'default' | 'small';
   lastHitTime?: number;
-  currentHp?: number;
-  maxHp?: number;
-  damageNumbers?: { id: number; value: number; type: 'dmg' | 'heal' | 'enemy-dmg'; targetId?: string }[];
+  mp?: number;
 }
 
-export const Card: React.FC<CardProps> = ({ paragon, isActive, onToggle, isLocked, variant = 'default', lastHitTime, currentHp, maxHp, damageNumbers }) => {
+export const Card: React.FC<CardProps> = ({ paragon, isActive, onToggle, isLocked, variant = 'default', lastHitTime, mp = 0 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const controls = useAnimation();
-
-  const hpPercentage = (currentHp !== undefined && maxHp !== undefined) ? (currentHp / maxHp) * 100 : 100;
-  const myDamageNumbers = damageNumbers?.filter(d => d.targetId === paragon.id) || [];
 
   useEffect(() => {
     if (isActive && lastHitTime) {
@@ -50,23 +45,28 @@ export const Card: React.FC<CardProps> = ({ paragon, isActive, onToggle, isLocke
             animate={controls}
           >
             {/* Front */}
-            <div className="absolute inset-0 backface-hidden obsidian-border rounded-md overflow-hidden flex flex-col" onClick={handleFlip}>
+            <div 
+              className={`absolute inset-0 backface-hidden obsidian-border rounded-md overflow-hidden flex flex-col transition-shadow duration-300 ${mp >= 100 ? 'ring-2 ring-blue-400 shadow-[0_0_15px_rgba(96,165,250,0.8)] animate-pulse' : ''}`} 
+              onClick={handleFlip}
+            >
               <img 
                 src={paragon.portrait} 
                 alt={paragon.name} 
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
-              {/* Health Bar */}
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
-                <motion.div 
-                  className="h-full bg-green-500"
-                  initial={{ width: '100%' }}
-                  animate={{ width: `${hpPercentage}%` }}
-                />
-              </div>
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-obsidian to-transparent p-1">
                 <h3 className="text-[8px] font-bold text-white leading-tight truncate">{paragon.name}</h3>
+              </div>
+              
+              {/* MP Bar */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
+                <motion.div 
+                  className="h-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.8)]"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${mp}%` }}
+                  transition={{ duration: 0.1 }}
+                />
               </div>
             </div>
 
@@ -104,41 +104,27 @@ export const Card: React.FC<CardProps> = ({ paragon, isActive, onToggle, isLocke
         transition={{ type: 'spring', stiffness: 260, damping: 20 }}
       >
         {/* Front */}
-        <div className={`absolute inset-0 backface-hidden obsidian-border rounded-xl overflow-hidden flex flex-col ${isLocked ? 'grayscale opacity-50' : ''} ${isActive ? 'ring-2 ring-luminary glow-cyan' : ''}`}>
-            <div className="relative flex-1 cursor-pointer" onClick={handleFlip}>
-              <img 
-                src={paragon.portrait} 
-                alt={paragon.name} 
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-              {/* Health Bar */}
-              <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/50">
-                <motion.div 
-                  className="h-full bg-green-500"
-                  initial={{ width: '100%' }}
-                  animate={{ width: `${hpPercentage}%` }}
-                />
-              </div>
-              {/* Damage Numbers */}
-              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                <AnimatePresence>
-                  {myDamageNumbers.map(dmg => (
-                    <motion.span
-                      key={dmg.id}
-                      initial={{ opacity: 1, y: 0, scale: 0.5 }}
-                      animate={{ opacity: 0, y: -50, scale: 1.5 }}
-                      exit={{ opacity: 0 }}
-                      className={`absolute text-lg font-bold font-runic ${dmg.type === 'heal' ? 'text-green-400' : 'text-red-500'}`}
-                    >
-                      {dmg.type === 'heal' ? '+' : '-'}{dmg.value}
-                    </motion.span>
-                  ))}
-                </AnimatePresence>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-obsidian to-transparent p-4">
+        <div className={`absolute inset-0 backface-hidden obsidian-border rounded-xl overflow-hidden flex flex-col ${isLocked ? 'grayscale opacity-50' : ''} ${isActive ? 'ring-2 ring-luminary glow-cyan' : ''} ${mp >= 100 ? 'ring-4 ring-blue-400 shadow-[0_0_30px_rgba(96,165,250,0.8)] animate-pulse' : ''}`}>
+          <div className="relative flex-1 cursor-pointer" onClick={handleFlip}>
+            <img 
+              src={paragon.portrait} 
+              alt={paragon.name} 
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-obsidian to-transparent p-4">
               <h3 className="text-xl font-bold text-white tracking-wider">{paragon.name}</h3>
               <p className="text-xs text-luminary uppercase tracking-widest">{paragon.race} • {paragon.affinity}</p>
+            </div>
+
+            {/* MP Bar */}
+            <div className="absolute bottom-0 left-0 right-0 h-2 bg-black/50">
+              <motion.div 
+                className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]"
+                initial={{ width: 0 }}
+                animate={{ width: `${mp}%` }}
+                transition={{ duration: 0.1 }}
+              />
             </div>
           </div>
           
@@ -168,14 +154,6 @@ export const Card: React.FC<CardProps> = ({ paragon, isActive, onToggle, isLocke
             <div className="flex justify-between border-b border-white/5 pb-1">
               <span className="text-white/50">SPD</span>
               <span className="text-white">{paragon.atkSpeed}x</span>
-            </div>
-            <div className="flex justify-between border-b border-white/5 pb-1">
-              <span className="text-white/50">HP</span>
-              <span className="text-white">{maxHp || paragon.baseHp}</span>
-            </div>
-            <div className="flex justify-between border-b border-white/5 pb-1">
-              <span className="text-white/50">DEF</span>
-              <span className="text-white">{paragon.baseDef}</span>
             </div>
             <div className="flex justify-between border-b border-white/5 pb-1">
               <span className="text-white/50">CRIT</span>
