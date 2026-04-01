@@ -64,12 +64,55 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Floor Timer */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
-        <div className="text-[10px] uppercase tracking-widest text-white/40 mb-1">Floor Timer</div>
-        <div className={`text-2xl font-runic font-bold ${floorTimer < 10 ? 'text-red-500 animate-pulse' : 'text-luminary'}`}>
-          {floorTimer.toFixed(1)}s
+      {/* Floor Timer & Navigation */}
+      <div className="w-full flex flex-col items-center gap-2 mb-4">
+        <div className="flex items-center gap-6">
+          <button 
+            onClick={() => store.descendFloor()}
+            disabled={store.currentFloor <= 1}
+            className={`p-2 rounded-lg border flex items-center gap-2 transition-all ${
+              store.currentFloor > 1 
+                ? 'border-white/20 text-white/80 hover:border-luminary hover:text-luminary bg-white/5' 
+                : 'border-white/5 text-white/10 cursor-not-allowed bg-transparent'
+            }`}
+            title="Previous Floor"
+          >
+            <Sword className="w-4 h-4 rotate-180" />
+            <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:inline">PREV</span>
+          </button>
+
+          <div className="flex flex-col items-center min-w-[100px]">
+            <div className="text-[10px] uppercase tracking-widest text-white/40 mb-0.5">Floor {store.currentFloor}</div>
+            <div className={`text-3xl font-runic font-bold ${floorTimer < 10 ? 'text-red-500 animate-pulse' : 'text-luminary'}`}>
+              {floorTimer.toFixed(1)}s
+            </div>
+          </div>
+
+          <button 
+            onClick={() => store.climbFloor()}
+            disabled={store.currentFloor >= store.highestFloor}
+            className={`p-2 rounded-lg border flex items-center gap-2 transition-all ${
+              store.currentFloor < store.highestFloor 
+                ? 'border-white/20 text-white/80 hover:border-luminary hover:text-luminary bg-white/5' 
+                : 'border-white/5 text-white/10 cursor-not-allowed bg-transparent'
+            }`}
+            title="Next Floor"
+          >
+            <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:inline">NEXT</span>
+            <Sword className="w-4 h-4" />
+          </button>
         </div>
+
+        <button 
+          onClick={() => store.toggleAutoProgress()}
+          className={`px-4 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg ${
+            store.autoProgress 
+              ? 'border-luminary text-luminary bg-luminary/20 glow-cyan' 
+              : 'border-white/20 text-white/60 bg-white/5 hover:border-white/40'
+          }`}
+        >
+          Auto-Advance: {store.autoProgress ? 'ON' : 'OFF'}
+        </button>
       </div>
 
       {/* Game Speed Toggle */}

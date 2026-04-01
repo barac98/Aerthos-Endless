@@ -52,6 +52,7 @@ export interface GameStoreState {
   
   // Settings & Meta
   gameSpeed: number;
+  autoProgress: boolean;
   isMuted: boolean;
   lastSaved: number;
   hasHydrated: boolean;
@@ -67,9 +68,11 @@ export interface GameStoreActions {
   purchaseAltarUpgrade: (slotIndex: number) => void;
   setHasHydrated: (state: boolean) => void;
   toggleMute: () => void;
+  toggleAutoProgress: () => void;
   setGameSpeed: (speed: number) => void;
   updateActiveTeam: (slotIndex: number, paragonId: string | null) => void;
   addXpToTeam: (amount: number) => void;
+  descendFloor: () => void;
 }
 
 export type GameStore = GameStoreState & GameStoreActions;

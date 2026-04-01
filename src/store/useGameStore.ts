@@ -109,6 +109,7 @@ export const useGameStore = create<GameStore>()(
       },
       altarSlots: ['atkMult', 'goldMult', 'shardMult'],
       gameSpeed: 1,
+      autoProgress: true,
       isMuted: false,
       lastSaved: Date.now(),
       hasHydrated: false,
@@ -131,6 +132,15 @@ export const useGameStore = create<GameStore>()(
         return {
           currentFloor: nextFloor,
           highestFloor: Math.max(state.highestFloor, nextFloor),
+          lastSaved: Date.now()
+        };
+      }),
+
+      descendFloor: () => set((state) => {
+        if (state.currentFloor <= 1) return state;
+        return {
+          currentFloor: state.currentFloor - 1,
+          autoProgress: false, // Automatically disable auto-progress when farming previous floors
           lastSaved: Date.now()
         };
       }),
@@ -211,6 +221,8 @@ export const useGameStore = create<GameStore>()(
       }),
 
       toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
+
+      toggleAutoProgress: () => set((state) => ({ autoProgress: !state.autoProgress })),
 
       setGameSpeed: (speed) => set({ gameSpeed: speed }),
 

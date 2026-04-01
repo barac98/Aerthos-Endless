@@ -38,6 +38,8 @@ export default function App() {
   const [isTimerPaused, setIsTimerPaused] = useState(false);
   const [screenEffect, setScreenEffect] = useState<{ type: 'flash' | 'shake'; color: string } | null>(null);
 
+  const isTransitioningRef = useRef(false);
+
   const enemyImageUrl = useMemo(() => {
     const monsterTypes = ['demon', 'wraith', 'golem', 'dragon', 'beholder', 'skeleton', 'gargoyle', 'chimera', 'hydra', 'lich'];
     const type = monsterTypes[store.currentFloor % monsterTypes.length];
@@ -51,6 +53,7 @@ export default function App() {
     setEnemyHp(nextMaxHp);
     setFloorTimer(60);
     setParagonMp({}); // Reset MP on floor change as requested
+    isTransitioningRef.current = false; // Unlock after HP is set
   }, [store.currentFloor]);
 
   // Global Game Tick
@@ -231,8 +234,12 @@ export default function App() {
 
       // 2. Update Enemy HP & Progress
       setEnemyHp(prev => {
+        if (prev <= 0 || isTransitioningRef.current) return prev; // Guard against multiple triggers
+
         const next = prev - totalDamageThisTick;
         if (next <= 0) {
+          isTransitioningRef.current = true; // Lock transition
+          
           // Enemy Defeated - Schedule store updates to avoid React warning
           Promise.resolve().then(() => {
             const currentState = useGameStore.getState();
@@ -258,9 +265,18 @@ export default function App() {
             const xpGain = isBoss ? 50 : 5;
             currentState.addXpToTeam(xpGain);
 
-            currentState.climbFloor();
+            if (currentState.autoProgress) {
+              currentState.climbFloor();
+            } else {
+              // Reset same floor
+              const nextMaxHp = Math.floor(100 * Math.pow(1.15, currentState.currentFloor - 1));
+              setMaxEnemyHp(nextMaxHp);
+              setEnemyHp(nextMaxHp);
+              setFloorTimer(60);
+              isTransitioningRef.current = false; // Unlock manually if not climbing
+            }
           });
-          return 100; // Temporary value, will be reset by floor effect
+          return 0; // Set to 0 to prevent further damage until reset
         }
         return next;
       });
