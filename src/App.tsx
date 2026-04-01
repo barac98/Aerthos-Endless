@@ -18,7 +18,9 @@ export default function App() {
   const [totalDps, setTotalDps] = useState(0);
   const [lastHitTime, setLastHitTime] = useState(0);
   const lastHitTimeRef = React.useRef(0);
-  const [damageNumbers, setDamageNumbers] = useState<{ id: number; value: number }[]>([]);
+  const [lastAttackTimes, setLastAttackTimes] = useState<Record<string, number>>({});
+  const [damageNumbers, setDamageNumbers] = useState<{ id: number; value: number; color: string; isCrit?: boolean }[]>([]);
+  const attackTimersRef = React.useRef<Record<string, number>>({});
 
   // Calculate Max HP for current floor
   useEffect(() => {
@@ -27,28 +29,11 @@ export default function App() {
     setEnemyHp(nextMaxHp);
   }, [store.currentFloor]);
 
-  // Debug Logging for Store State
-  useEffect(() => {
-    if (store.hasHydrated) {
-      console.log("[Aerthos] Store State Updated:", {
-        activeTeam: store.activeTeam,
-        ownedParagons: store.ownedParagons,
-        gold: store.gold,
-        essence: store.essence
-      });
-    }
-  }, [store.activeTeam, store.ownedParagons, store.hasHydrated, store.gold, store.essence]);
-
   // Global Game Tick
   useEffect(() => {
     if (!store.hasHydrated) {
-      console.log("[Aerthos] Waiting for hydration...");
       return;
     }
-
-    console.log("[Aerthos] Combat loop started. Initial Team:", store.activeTeam);
-    console.log("[Aerthos] INITIAL_PARAGONS count:", INITIAL_PARAGONS.length);
-    console.log("[Aerthos] INITIAL_PARAGONS IDs:", INITIAL_PARAGONS.map(p => p.id));
 
     const TICK_RATE = 100; // 100ms for smoother combat
     const interval = setInterval(() => {
@@ -59,7 +44,11 @@ export default function App() {
       // Explicitly find team members to avoid any filter issues
       const team = activeIds.map(id => INITIAL_PARAGONS.find(p => p.id === id)).filter((p): p is typeof INITIAL_PARAGONS[0] => !!p);
       
+      let totalDamageThisTick = 0;
       let currentTotalDps = 0;
+      const newDamageNumbers: { id: number; value: number; color: string; isCrit?: boolean }[] = [];
+      const attackingIds: string[] = [];
+
       team.forEach(p => {
         const owned = state.ownedParagons.find(op => op.id === p.id);
         const levelMult = owned ? 1 + (owned.level - 1) * 0.1 : 1;
@@ -81,36 +70,74 @@ export default function App() {
         const effectiveAtkSpeed = p.atkSpeed * temporalSpeedMult * permanentSpeedMult;
         const totalCrit = p.critChance + temporalCritMult + permanentCritMult;
         
-        // Apply Crit Average
+        // Calculate DPS for display
         const critDmgMult = 1 + totalCrit;
-        currentTotalDps += dmg * effectiveAtkSpeed * critDmgMult;
+        const charDps = dmg * effectiveAtkSpeed * critDmgMult;
+        currentTotalDps += charDps;
+
+        // Attack Timer Logic
+        const timer = attackTimersRef.current[p.id] || 0;
+        const progress = (effectiveAtkSpeed * TICK_RATE / 1000) * state.gameSpeed;
+        const newTimer = timer + progress;
+        
+        const attacks = Math.floor(newTimer);
+        if (attacks > 0) {
+          attackingIds.push(p.id);
+          for (let i = 0; i < attacks; i++) {
+            const isCrit = Math.random() < totalCrit;
+            const finalDmg = dmg * (isCrit ? 2 : 1);
+            totalDamageThisTick += finalDmg;
+
+            // Add damage number occasionally to avoid clutter
+            if (Math.random() < 0.3) {
+              newDamageNumbers.push({
+                id: Date.now() + Math.random(),
+                value: Math.floor(finalDmg),
+                color: p.color,
+                isCrit
+              });
+            }
+          }
+          attackTimersRef.current[p.id] = newTimer - attacks;
+        } else {
+          attackTimersRef.current[p.id] = newTimer;
+        }
       });
 
-      // Apply Game Speed
+      // Apply Game Speed to DPS display
       const dpsWithSpeed = currentTotalDps * state.gameSpeed;
-      const damagePerTick = (dpsWithSpeed * TICK_RATE) / 1000;
 
-      if (currentTotalDps > 0) {
+      if (totalDamageThisTick > 0) {
         setTotalDps(dpsWithSpeed);
         
-        // Throttled hit animation (200ms)
+        // Update individual attack times for animations
+        if (attackingIds.length > 0) {
+          const now = Date.now();
+          setLastAttackTimes(prev => {
+            const next = { ...prev };
+            attackingIds.forEach(id => { next[id] = now; });
+            return next;
+          });
+        }
+
+        // Throttled hit animation for enemy (200ms)
         const now = Date.now();
         if (now - lastHitTimeRef.current > 200) {
           setLastHitTime(now);
           lastHitTimeRef.current = now;
         }
 
-        // Only show damage numbers occasionally to avoid clutter at high speeds
-        if (Math.random() < 0.2) {
-          setDamageNumbers(prev => [...prev.slice(-5), { id: Date.now(), value: Math.floor(dpsWithSpeed) }]);
+        if (newDamageNumbers.length > 0) {
+          setDamageNumbers(prev => [...prev.slice(-10), ...newDamageNumbers]);
         }
       } else {
-        setTotalDps(0);
+        // Still update DPS display even if no attack this tick
+        setTotalDps(dpsWithSpeed);
       }
 
       // 2. Update Enemy HP & Progress
       setEnemyHp(prev => {
-        const next = prev - damagePerTick;
+        const next = prev - totalDamageThisTick;
         if (next <= 0) {
           // Enemy Defeated - Schedule store updates to avoid React warning
           Promise.resolve().then(() => {
@@ -251,12 +278,17 @@ export default function App() {
                       {damageNumbers.map((dmg) => (
                         <motion.span
                           key={dmg.id}
-                          initial={{ opacity: 1, y: 0, scale: 0.5 }}
-                          animate={{ opacity: 0, y: -100, scale: 1.5 }}
+                          initial={{ opacity: 1, y: 0, scale: 0.5, x: (Math.random() - 0.5) * 40 }}
+                          animate={{ opacity: 0, y: -120, scale: 1.5, x: (Math.random() - 0.5) * 80 }}
                           exit={{ opacity: 0 }}
-                          transition={{ duration: 0.8, ease: "easeOut" }}
-                          className="absolute text-xl sm:text-2xl font-bold text-red-500 text-glow-purple font-runic"
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className="absolute text-xl sm:text-2xl font-bold font-runic"
+                          style={{ 
+                            color: dmg.color,
+                            textShadow: `0 0 10px ${dmg.color}80, 0 0 20px ${dmg.color}40`
+                          }}
                         >
+                          {dmg.isCrit && <span className="block text-[10px] uppercase tracking-tighter mb-[-4px]">Crit!</span>}
                           -{dmg.value}
                         </motion.span>
                       ))}
@@ -293,12 +325,12 @@ export default function App() {
                         paragon={p} 
                         variant="small" 
                         isActive={store.activeTeam.includes(p.id)}
-                        lastHitTime={lastHitTime}
+                        lastHitTime={lastAttackTimes[p.id]}
                       />
                     </motion.div>
                     <div className="flex items-center gap-1">
-                      {store.activeTeam.includes(p.id) && <div className="w-1 h-1 rounded-full bg-luminary glow-cyan" />}
-                      <span className="text-[8px] sm:text-[10px] uppercase tracking-widest text-white/70">{p.name}</span>
+                      {store.activeTeam.includes(p.id) && <div className="w-1.5 h-1.5 rounded-full glow-cyan" style={{ backgroundColor: p.color, boxShadow: `0 0 8px ${p.color}` }} />}
+                      <span className="text-[8px] sm:text-[10px] uppercase tracking-widest font-bold" style={{ color: p.color }}>{p.name}</span>
                     </div>
                   </div>
                 ))}

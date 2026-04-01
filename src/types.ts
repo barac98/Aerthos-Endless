@@ -13,6 +13,7 @@ export interface Paragon {
   description: string;
   portrait: string;
   shardCost: number;
+  color: string;
 }
 
 export interface OwnedParagon {
@@ -84,6 +85,7 @@ export const INITIAL_PARAGONS: Paragon[] = [
     description: 'A fallen knight of the Luminary Order, seeking redemption in the tower.',
     portrait: 'https://loremflickr.com/1024/1024/knight,fantasy/all',
     shardCost: 0, // Starting character
+    color: '#00FFFF', // Cyan
   },
   {
     id: 'silas-vane',
@@ -97,6 +99,7 @@ export const INITIAL_PARAGONS: Paragon[] = [
     description: 'An ancient vampire who feeds on the shadows of the tower.',
     portrait: 'https://loremflickr.com/1024/1024/vampire,fantasy/all',
     shardCost: 50,
+    color: '#FF00FF', // Magenta
   },
   {
     id: 'elara',
@@ -110,6 +113,7 @@ export const INITIAL_PARAGONS: Paragon[] = [
     description: 'A swift archer from the Silver Woods, trapped in obsidian.',
     portrait: 'https://loremflickr.com/1024/1024/elf,archer,fantasy/all',
     shardCost: 150,
+    color: '#00FF00', // Lime
   },
   {
     id: 'oghul',
@@ -123,5 +127,6 @@ export const INITIAL_PARAGONS: Paragon[] = [
     description: 'A mountain-born giant whose strength shakes the tower foundations.',
     portrait: 'https://loremflickr.com/1024/1024/giant,monster,fantasy/all',
     shardCost: 500,
+    color: '#FFA500', // Orange
   },
 ];

@@ -36,10 +36,10 @@ const mockStorage = {
           currentFloor: 1,
           highestFloor: 1,
           totalResets: 0,
-          activeTeam: ['silas-vane', 'kaelen-bold', null, null, null],
+          activeTeam: ['silas-vane', 'kaelen-bold', null, null, null, null, null, null, null],
           ownedParagons: [
-            { id: 'kaelen-bold', level: 1, xp: 0 },
-            { id: 'silas-vane', level: 1, xp: 0 }
+            { id: 'kaelen-bold', level: 1, xp: 0, currentHp: 150, maxHp: 150, shatteredUntil: 0 },
+            { id: 'silas-vane', level: 1, xp: 0, currentHp: 100, maxHp: 100, shatteredUntil: 0 }
           ],
           temporalUpgrades: { atk: 1, speed: 1, crit: 1 },
           permanentUpgrades: {
@@ -96,8 +96,8 @@ export const useGameStore = create<GameStore>()(
       currentFloor: 1,
       highestFloor: 1,
       totalResets: 0,
-      activeTeam: [null, null, null, null, null],
-      ownedParagons: [{ id: 'kaelen-bold', level: 1, xp: 0 }],
+      activeTeam: [null, null, null, null, null, null, null, null, null],
+      ownedParagons: [{ id: 'kaelen-bold', level: 1, xp: 0, currentHp: 150, maxHp: 150, shatteredUntil: 0 }],
       temporalUpgrades: { atk: 1, speed: 1, crit: 1 },
       permanentUpgrades: {
         atkMult: 1,
@@ -144,7 +144,14 @@ export const useGameStore = create<GameStore>()(
 
         return {
           soulShards: state.soulShards - paragon.shardCost,
-          ownedParagons: [...state.ownedParagons, { id: paragonId, level: 1, xp: 0 }],
+          ownedParagons: [...state.ownedParagons, { 
+            id: paragonId, 
+            level: 1, 
+            xp: 0, 
+            currentHp: paragon.baseHp, 
+            maxHp: paragon.baseHp,
+            shatteredUntil: 0 
+          }],
           lastSaved: Date.now()
         };
       }),
@@ -214,6 +221,42 @@ export const useGameStore = create<GameStore>()(
 
       setGameSpeed: (speed) => set({ gameSpeed: speed }),
 
+      updateParagonHp: (paragonId, amount) => set((state) => {
+        const slotIndex = state.activeTeam.indexOf(paragonId);
+        const hpBonus = (slotIndex !== -1 && slotIndex < 3) ? 1.2 : 1.0;
+        
+        return {
+          ownedParagons: state.ownedParagons.map(p => {
+            if (p.id !== paragonId) return p;
+            const effectiveMaxHp = p.maxHp * hpBonus;
+            const nextHp = Math.max(0, Math.min(effectiveMaxHp, p.currentHp + amount));
+            const isShattered = nextHp <= 0 && p.currentHp > 0;
+            return {
+              ...p,
+              currentHp: nextHp,
+              shatteredUntil: isShattered ? Date.now() + 10000 : p.shatteredUntil
+            };
+          })
+        };
+      }),
+
+      respawnParagon: (paragonId) => set((state) => {
+        const slotIndex = state.activeTeam.indexOf(paragonId);
+        const hpBonus = (slotIndex !== -1 && slotIndex < 3) ? 1.2 : 1.0;
+        
+        return {
+          ownedParagons: state.ownedParagons.map(p => {
+            if (p.id !== paragonId) return p;
+            const effectiveMaxHp = p.maxHp * hpBonus;
+            return {
+              ...p,
+              currentHp: effectiveMaxHp * 0.5,
+              shatteredUntil: 0
+            };
+          })
+        };
+      }),
+
       updateActiveTeam: (slotIndex, paragonId) => set((state) => {
         const newTeam = [...state.activeTeam];
         newTeam[slotIndex] = paragonId;
@@ -221,17 +264,19 @@ export const useGameStore = create<GameStore>()(
       }),
     }),
     {
-      name: 'aerthos-save-v2',
-      version: 2,
+      name: 'aerthos-save-v3',
+      version: 3,
       migrate: (persistedState: any, version: number) => {
-        console.log(`[Aerthos] Migrating from version ${version} to 2`);
+        console.log(`[Aerthos] Migrating from version ${version} to 3`);
+        let state = persistedState;
+        
         if (version < 2) {
-          return {
-            ...persistedState,
+          state = {
+            ...state,
             permanentUpgrades: {
-              atkMult: persistedState.permanentUpgrades?.atkMult || 1,
-              goldMult: persistedState.permanentUpgrades?.goldMult || 1,
-              shardMult: persistedState.permanentUpgrades?.shardMult || 1,
+              atkMult: state.permanentUpgrades?.atkMult || 1,
+              goldMult: state.permanentUpgrades?.goldMult || 1,
+              shardMult: state.permanentUpgrades?.shardMult || 1,
               essenceGain: 1,
               critRate: 1,
               speedMult: 1,
@@ -239,7 +284,24 @@ export const useGameStore = create<GameStore>()(
             altarSlots: ['atkMult', 'goldMult', 'shardMult'],
           };
         }
-        return persistedState;
+
+        if (version < 3) {
+          state = {
+            ...state,
+            activeTeam: Array(9).fill(null).map((_, i) => state.activeTeam?.[i] || null),
+            ownedParagons: state.ownedParagons.map((p: any) => {
+              const base = INITIAL_PARAGONS.find(ip => ip.id === p.id);
+              return {
+                ...p,
+                currentHp: p.currentHp ?? base?.baseHp ?? 100,
+                maxHp: p.maxHp ?? base?.baseHp ?? 100,
+                shatteredUntil: p.shatteredUntil ?? 0
+              };
+            })
+          };
+        }
+        
+        return state;
       },
       storage,
       onRehydrateStorage: (state) => {
