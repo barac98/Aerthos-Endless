@@ -248,6 +248,10 @@ export default function App() {
               currentState.addSoulShards(normalShards);
             }
 
+            // XP Distribution
+            const xpGain = isBoss ? 50 : 5;
+            currentState.addXpToTeam(xpGain);
+
             currentState.climbFloor();
           });
           return 100; // Temporary value, will be reset by floor effect

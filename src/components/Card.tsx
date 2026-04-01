@@ -10,11 +10,35 @@ interface CardProps {
   variant?: 'default' | 'small';
   lastHitTime?: number;
   mp?: number;
+  level?: number;
+  xp?: number;
+  nextLevelXp?: number;
 }
 
-export const Card: React.FC<CardProps> = ({ paragon, isActive, onToggle, isLocked, variant = 'default', lastHitTime, mp = 0 }) => {
+export const Card: React.FC<CardProps> = ({ 
+  paragon, 
+  isActive, 
+  onToggle, 
+  isLocked, 
+  variant = 'default', 
+  lastHitTime, 
+  mp = 0,
+  level = 1,
+  xp = 0,
+  nextLevelXp = 100
+}) => {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const prevLevel = React.useRef(level);
   const controls = useAnimation();
+
+  useEffect(() => {
+    if (level > prevLevel.current) {
+      setShowLevelUp(true);
+      setTimeout(() => setShowLevelUp(false), 2000);
+    }
+    prevLevel.current = level;
+  }, [level]);
 
   useEffect(() => {
     if (isActive && lastHitTime) {
@@ -55,17 +79,33 @@ export const Card: React.FC<CardProps> = ({ paragon, isActive, onToggle, isLocke
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
+              
+              {/* Level Badge */}
+              <div className="absolute top-1 right-1 bg-black/80 px-1 rounded border border-white/10 z-10">
+                <span className="text-[6px] font-bold text-luminary">Lv.{level}</span>
+              </div>
+
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-obsidian to-transparent p-1">
                 <h3 className="text-[8px] font-bold text-white leading-tight truncate">{paragon.name}</h3>
               </div>
               
               {/* MP Bar */}
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
+              <div className="absolute bottom-1 left-0 right-0 h-0.5 bg-black/50">
                 <motion.div 
                   className="h-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.8)]"
                   initial={{ width: 0 }}
                   animate={{ width: `${mp}%` }}
                   transition={{ duration: 0.1 }}
+                />
+              </div>
+
+              {/* XP Bar */}
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/50">
+                <motion.div 
+                  className="h-full bg-purple-500 shadow-[0_0_5px_rgba(168,85,247,0.8)]"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(xp / nextLevelXp) * 100}%` }}
+                  transition={{ duration: 0.3 }}
                 />
               </div>
             </div>
@@ -112,18 +152,50 @@ export const Card: React.FC<CardProps> = ({ paragon, isActive, onToggle, isLocke
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
             />
+
+            {/* Level Badge */}
+            <div className="absolute top-2 right-2 bg-black/80 px-2 py-0.5 rounded-md border border-white/20 z-10">
+              <span className="text-xs font-bold text-luminary tracking-widest">Lv.{level}</span>
+            </div>
+
+            {/* Level Up Animation Overlay */}
+            <AnimatePresence>
+              {showLevelUp && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                  animate={{ opacity: 1, scale: 1.2, y: -20 }}
+                  exit={{ opacity: 0, scale: 1.5, y: -40 }}
+                  className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+                >
+                  <div className="bg-luminary/20 backdrop-blur-sm px-4 py-2 rounded-full border border-luminary shadow-[0_0_20px_rgba(0,255,255,0.5)]">
+                    <span className="text-xl font-runic font-bold text-white animate-pulse">LEVEL UP!</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-obsidian to-transparent p-4">
               <h3 className="text-xl font-bold text-white tracking-wider">{paragon.name}</h3>
               <p className="text-xs text-luminary uppercase tracking-widest">{paragon.race} • {paragon.affinity}</p>
             </div>
 
             {/* MP Bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-2 bg-black/50">
+            <div className="absolute bottom-2 left-0 right-0 h-2 bg-black/50">
               <motion.div 
                 className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]"
                 initial={{ width: 0 }}
                 animate={{ width: `${mp}%` }}
                 transition={{ duration: 0.1 }}
+              />
+            </div>
+
+            {/* XP Bar */}
+            <div className="absolute bottom-0 left-0 right-0 h-2 bg-black/50">
+              <motion.div 
+                className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.8)]"
+                initial={{ width: 0 }}
+                animate={{ width: `${(xp / nextLevelXp) * 100}%` }}
+                transition={{ duration: 0.3 }}
               />
             </div>
           </div>

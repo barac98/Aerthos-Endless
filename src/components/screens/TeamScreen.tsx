@@ -11,10 +11,16 @@ interface TeamScreenProps {
 export const TeamScreen: React.FC<TeamScreenProps> = ({ paragonMp }) => {
   const store = useGameStore();
 
-  const unlockedParagons = React.useMemo(() => 
-    INITIAL_PARAGONS.filter(p => store.ownedParagons.some(op => op.id === p.id)),
-    [store.ownedParagons]
-  );
+  const unlockedParagons = React.useMemo(() => {
+    const owned = store.ownedParagons;
+    return [...INITIAL_PARAGONS]
+      .filter(p => owned.some(op => op.id === p.id))
+      .sort((a, b) => {
+        const opA = owned.find(o => o.id === a.id);
+        const opB = owned.find(o => o.id === b.id);
+        return (opB?.level || 0) - (opA?.level || 0); // Sort by level descending
+      });
+  }, [store.ownedParagons]);
 
   return (
     <motion.div 
@@ -24,25 +30,31 @@ export const TeamScreen: React.FC<TeamScreenProps> = ({ paragonMp }) => {
       exit={{ opacity: 0 }}
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-start content-start"
     >
-      {unlockedParagons.map(p => (
-        <Card 
-          key={p.id} 
-          paragon={p} 
-          isActive={store.activeTeam.includes(p.id)}
-          mp={paragonMp[p.id] || 0}
-          onToggle={() => {
-            const slotIndex = store.activeTeam.indexOf(p.id);
-            if (slotIndex !== -1) {
-              store.updateActiveTeam(slotIndex, null);
-            } else {
-              const emptySlot = store.activeTeam.indexOf(null);
-              if (emptySlot !== -1) {
-                store.updateActiveTeam(emptySlot, p.id);
+      {unlockedParagons.map(p => {
+        const ownedData = store.ownedParagons.find(op => op.id === p.id);
+        return (
+          <Card 
+            key={p.id} 
+            paragon={p} 
+            isActive={store.activeTeam.includes(p.id)}
+            mp={paragonMp[p.id] || 0}
+            level={ownedData?.level}
+            xp={ownedData?.xp}
+            nextLevelXp={ownedData?.nextLevelXp}
+            onToggle={() => {
+              const slotIndex = store.activeTeam.indexOf(p.id);
+              if (slotIndex !== -1) {
+                store.updateActiveTeam(slotIndex, null);
+              } else {
+                const emptySlot = store.activeTeam.indexOf(null);
+                if (emptySlot !== -1) {
+                  store.updateActiveTeam(emptySlot, p.id);
+                }
               }
-            }
-          }}
-        />
-      ))}
+            }}
+          />
+        );
+      })}
     </motion.div>
   );
 };

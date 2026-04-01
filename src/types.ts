@@ -20,6 +20,7 @@ export interface OwnedParagon {
   id: string;
   level: number;
   xp: number;
+  nextLevelXp: number;
 }
 
 export type PermanentStatId = 'atkMult' | 'goldMult' | 'shardMult' | 'essenceGain' | 'critRate' | 'speedMult';
@@ -68,6 +69,7 @@ export interface GameStoreActions {
   toggleMute: () => void;
   setGameSpeed: (speed: number) => void;
   updateActiveTeam: (slotIndex: number, paragonId: string | null) => void;
+  addXpToTeam: (amount: number) => void;
 }
 
 export type GameStore = GameStoreState & GameStoreActions;
