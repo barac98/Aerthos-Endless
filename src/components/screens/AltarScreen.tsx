@@ -4,6 +4,7 @@ import { Sparkles } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { PermanentStatId } from '../../types';
 import { STAT_METADATA } from '../../constants';
+import { useHoldPress } from '../../hooks/useHoldPress';
 
 interface AltarScreenProps {
   setShowArchive: (show: boolean) => void;
@@ -65,6 +66,7 @@ const AltarSlot: React.FC<{ statId: PermanentStatId, level: number, onUpgrade: (
   const metadata = STAT_METADATA[statId];
   const cost = Math.floor(5 * Math.pow(1.5, totalLevels));
   const canAfford = essence >= cost;
+  const handlers = useHoldPress(onUpgrade);
 
   return (
     <motion.button 
@@ -73,7 +75,7 @@ const AltarSlot: React.FC<{ statId: PermanentStatId, level: number, onUpgrade: (
       animate={{ scale: 1, opacity: 1 }}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      onClick={onUpgrade}
+      {...handlers}
       disabled={!canAfford}
       className={`relative p-6 obsidian-border rounded-xl bg-black/40 flex flex-col items-center gap-4 w-full group overflow-hidden transition-all ${
         canAfford ? 'hover:bg-white/5' : 'opacity-70 grayscale'

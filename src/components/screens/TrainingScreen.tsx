@@ -2,9 +2,14 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Sword, Zap, Shield } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
+import { useHoldPress } from '../../hooks/useHoldPress';
 
 export const TrainingScreen: React.FC = () => {
   const store = useGameStore();
+
+  const atkHandlers = useHoldPress(() => store.upgradeTemporal('atk'));
+  const speedHandlers = useHoldPress(() => store.upgradeTemporal('speed'));
+  const critHandlers = useHoldPress(() => store.upgradeTemporal('crit'));
 
   return (
     <motion.div 
@@ -27,7 +32,7 @@ export const TrainingScreen: React.FC = () => {
             <p className="text-[9px] text-luminary uppercase">Level {store.temporalUpgrades.atk}</p>
           </div>
           <button 
-            onClick={() => store.upgradeTemporal('atk')}
+            {...atkHandlers}
             disabled={store.gold < Math.floor(50 * Math.pow(1.3, store.temporalUpgrades.atk - 1))}
             className={`w-full py-1.5 rounded-md border text-[9px] font-bold uppercase tracking-widest transition-all ${
               store.gold >= Math.floor(50 * Math.pow(1.3, store.temporalUpgrades.atk - 1))
@@ -46,7 +51,7 @@ export const TrainingScreen: React.FC = () => {
             <p className="text-[9px] text-luminary uppercase">Level {store.temporalUpgrades.speed}</p>
           </div>
           <button 
-            onClick={() => store.upgradeTemporal('speed')}
+            {...speedHandlers}
             disabled={store.gold < Math.floor(50 * Math.pow(1.3, store.temporalUpgrades.speed - 1))}
             className={`w-full py-1.5 rounded-md border text-[9px] font-bold uppercase tracking-widest transition-all ${
               store.gold >= Math.floor(50 * Math.pow(1.3, store.temporalUpgrades.speed - 1))
@@ -65,7 +70,7 @@ export const TrainingScreen: React.FC = () => {
             <p className="text-[9px] text-luminary uppercase">Level {store.temporalUpgrades.crit}</p>
           </div>
           <button 
-            onClick={() => store.upgradeTemporal('crit')}
+            {...critHandlers}
             disabled={store.gold < Math.floor(50 * Math.pow(1.3, store.temporalUpgrades.crit - 1))}
             className={`w-full py-1.5 rounded-md border text-[9px] font-bold uppercase tracking-widest transition-all ${
               store.gold >= Math.floor(50 * Math.pow(1.3, store.temporalUpgrades.crit - 1))
