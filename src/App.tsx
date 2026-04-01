@@ -96,15 +96,13 @@ export default function App() {
             const finalDmg = dmg * (isCrit ? 2 : 1);
             totalDamageThisTick += finalDmg;
 
-            // Add damage number occasionally to avoid clutter
-            if (Math.random() < 0.3) {
-              newDamageNumbers.push({
-                id: Date.now() + Math.random(),
-                value: Math.floor(finalDmg),
-                color: p.color,
-                isCrit
-              });
-            }
+            // Add damage number for every attack
+            newDamageNumbers.push({
+              id: Date.now() + Math.random(),
+              value: Math.floor(finalDmg),
+              color: p.color,
+              isCrit
+            });
           }
           attackTimersRef.current[p.id] = newTimer - attacks;
         } else {
