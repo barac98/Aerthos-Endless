@@ -90,7 +90,7 @@ export const INITIAL_PARAGONS: Paragon[] = [
     baseAtk: 10,
     atkSpeed: 1.0,
     critChance: 0.05,
-    ability: 'DMG scales with floor height.',
+    ability: 'DMG scales with floor height (+5%/floor).',
     description: 'A fallen knight of the Luminary Order, seeking redemption in the tower.',
     portrait: 'https://loremflickr.com/1024/1024/knight,fantasy/all',
     shardCost: 0, // Starting character

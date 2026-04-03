@@ -34,9 +34,9 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
 }) => {
   const store = useGameStore();
 
-  const unlockedParagons = React.useMemo(() => 
-    INITIAL_PARAGONS.filter(p => store.ownedParagons.some(op => op.id === p.id)),
-    [store.ownedParagons]
+  const activeParagons = React.useMemo(() => 
+    INITIAL_PARAGONS.filter(p => store.activeTeam.includes(p.id)),
+    [store.activeTeam]
   );
 
   return (
@@ -206,7 +206,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
 
       {/* Team HUD */}
       <div className="flex flex-wrap justify-center gap-3 sm:gap-3 max-h-[35vh] overflow-y-auto no-scrollbar p-1">
-        {unlockedParagons.map(p => {
+        {activeParagons.map(p => {
           const ownedData = store.ownedParagons.find(op => op.id === p.id);
           return (
             <div key={p.id} className="flex flex-col items-center gap-1 sm:gap-1 scale-100 sm:scale-100">
@@ -216,7 +216,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                 <Card 
                   paragon={p} 
                   variant="small" 
-                  isActive={store.activeTeam.includes(p.id)}
+                  isActive={true}
                   lastHitTime={lastAttackTimes[p.id]}
                   mp={paragonMp[p.id] || 0}
                   level={ownedData?.level}
@@ -225,7 +225,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                 />
               </motion.div>
               <div className="flex items-center gap-1">
-                {store.activeTeam.includes(p.id) && <div className="w-1.5 h-1.5 rounded-full glow-cyan" style={{ backgroundColor: p.color, boxShadow: `0 0 8px ${p.color}` }} />}
+                <div className="w-1.5 h-1.5 rounded-full glow-cyan" style={{ backgroundColor: p.color, boxShadow: `0 0 8px ${p.color}` }} />
                 <span className="text-[8px] sm:text-[10px] uppercase tracking-widest font-bold" style={{ color: p.color }}>{p.name}</span>
               </div>
             </div>

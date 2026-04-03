@@ -137,7 +137,7 @@ export const Card: React.FC<CardProps> = ({
   }
 
   return (
-    <div className="relative w-full max-w-[256px] aspect-[2/3] perspective-1000 group cursor-pointer" onClick={onToggle}>
+    <div className="relative w-full max-w-[256px] aspect-[2/3] perspective-1000 group cursor-pointer">
       <motion.div
         className="relative w-full h-full transition-all duration-500 preserve-3d"
         animate={{ rotateY: isFlipped ? 180 : 0 }}
@@ -200,11 +200,28 @@ export const Card: React.FC<CardProps> = ({
             </div>
           </div>
           
-          <div className="p-2 bg-obsidian/80 flex justify-between items-center border-t border-white/10">
-            <span className="text-[10px] uppercase tracking-tighter text-white/30">
-              Click image to flip
-            </span>
-            {isActive && <span className="text-[10px] text-luminary font-bold">ACTIVE</span>}
+          <div className="p-2 bg-obsidian/80 flex flex-col gap-2 border-t border-white/10">
+            <div className="flex justify-between items-center">
+              <span className="text-[8px] uppercase tracking-tighter text-white/30">
+                Tap card for Stats & Lore
+              </span>
+              {isActive && <span className="text-[10px] text-luminary font-bold animate-pulse">DEPLOYED</span>}
+            </div>
+            {!isLocked && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggle?.();
+                }}
+                className={`w-full py-1.5 rounded text-[10px] font-bold uppercase tracking-widest transition-all ${
+                  isActive 
+                    ? 'bg-red-500/20 border border-red-500/50 text-red-400 hover:bg-red-500/40' 
+                    : 'bg-luminary/20 border border-luminary/50 text-luminary hover:bg-luminary/40'
+                }`}
+              >
+                {isActive ? 'Recall' : 'Deploy'}
+              </button>
+            )}
           </div>
         </div>
 
