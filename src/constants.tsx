@@ -40,3 +40,26 @@ export const STAT_METADATA: Record<PermanentStatId, { name: string; icon: React.
     bonusText: (lvl) => `+${(lvl * 5).toFixed(0)}% ATK Speed`
   }
 };
+
+export const BIOMES = [
+  { 
+    name: "The Iron Crypts", 
+    url: "https://picsum.photos/id/1044/1920/1080",
+    color: "#4A5568"
+  },
+  { 
+    name: "The Runic Observatory", 
+    url: "https://picsum.photos/id/10/1920/1080",
+    color: "#00FFFF"
+  },
+  { 
+    name: "The Abyssal Rift", 
+    url: "https://picsum.photos/id/1028/1920/1080",
+    color: "#8A2BE2"
+  },
+  { 
+    name: "The Celestial Spire", 
+    url: "https://picsum.photos/id/1015/1920/1080",
+    color: "#F6AD55"
+  }
+];

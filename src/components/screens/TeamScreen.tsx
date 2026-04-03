@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useGameStore } from '../../store/useGameStore';
 import { Card } from '../Card';
 import { INITIAL_PARAGONS } from '../../types';
+import { BIOMES } from '../../constants';
 
 interface TeamScreenProps {
   paragonMp: Record<string, number>;
@@ -10,6 +11,8 @@ interface TeamScreenProps {
 
 export const TeamScreen: React.FC<TeamScreenProps> = ({ paragonMp }) => {
   const store = useGameStore();
+  const biomeIndex = Math.min(Math.floor((store.currentFloor - 1) / 50), BIOMES.length - 1);
+  const currentBiome = BIOMES[biomeIndex];
 
   const unlockedParagons = React.useMemo(() => {
     const owned = store.ownedParagons;
@@ -41,6 +44,7 @@ export const TeamScreen: React.FC<TeamScreenProps> = ({ paragonMp }) => {
             level={ownedData?.level}
             xp={ownedData?.xp}
             nextLevelXp={ownedData?.nextLevelXp}
+            biomeColor={currentBiome.color}
             onToggle={() => {
               const slotIndex = store.activeTeam.indexOf(p.id);
               if (slotIndex !== -1) {

@@ -4,9 +4,12 @@ import { Shield } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { Card } from '../Card';
 import { INITIAL_PARAGONS } from '../../types';
+import { BIOMES } from '../../constants';
 
 export const RecruitScreen: React.FC = () => {
   const store = useGameStore();
+  const biomeIndex = Math.min(Math.floor((store.currentFloor - 1) / 50), BIOMES.length - 1);
+  const currentBiome = BIOMES[biomeIndex];
 
   return (
     <motion.div 
@@ -23,7 +26,7 @@ export const RecruitScreen: React.FC = () => {
             key={p.id} 
             className="flex flex-col items-center gap-2 sm:gap-4"
           >
-            <Card paragon={p} isLocked={true} />
+            <Card paragon={p} isLocked={true} biomeColor={currentBiome.color} />
             <button 
               onClick={() => store.recruitParagon(p.id)}
               disabled={store.soulShards < p.shardCost}

@@ -3,8 +3,11 @@ import { motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { PermanentStatId } from '../types';
 import { STAT_METADATA } from '../constants';
+import { useGameStore } from '../store/useGameStore';
+import { Shield } from 'lucide-react';
 
 export const StatArchive: React.FC<{ upgrades: Record<PermanentStatId, number>, onClose: () => void }> = ({ upgrades, onClose }) => {
+  const store = useGameStore();
   const sortedStats = (Object.keys(STAT_METADATA) as PermanentStatId[]).sort((a, b) => 
     STAT_METADATA[a].name.localeCompare(STAT_METADATA[b].name)
   );
@@ -37,6 +40,26 @@ export const StatArchive: React.FC<{ upgrades: Record<PermanentStatId, number>, 
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
+          {/* General Stats */}
+          <div className="p-4 rounded-xl border bg-luminary/5 border-luminary/20 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-luminary/10 rounded-lg">
+                <Shield className="w-6 h-6 text-luminary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-white">Boss Shards</h3>
+                <p className="text-[10px] text-white/50 uppercase tracking-widest">Total Shards from Boss Defeats</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-runic font-bold text-luminary">
+                {store.totalBossShardsCollected}
+              </p>
+            </div>
+          </div>
+
+          <div className="h-px bg-white/10 my-2" />
+
           {sortedStats.map(id => {
             const level = upgrades[id];
             const meta = STAT_METADATA[id];

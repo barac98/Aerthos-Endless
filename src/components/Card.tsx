@@ -13,6 +13,7 @@ interface CardProps {
   level?: number;
   xp?: number;
   nextLevelXp?: number;
+  biomeColor?: string;
 }
 
 export const Card: React.FC<CardProps> = ({ 
@@ -25,7 +26,8 @@ export const Card: React.FC<CardProps> = ({
   mp = 0,
   level = 1,
   xp = 0,
-  nextLevelXp = 100
+  nextLevelXp = 100,
+  biomeColor = '#00FFFF'
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -70,7 +72,12 @@ export const Card: React.FC<CardProps> = ({
           >
             {/* Front */}
             <div 
-              className={`absolute inset-0 backface-hidden obsidian-border rounded-md overflow-hidden flex flex-col transition-shadow duration-300 ${mp >= 100 ? 'ring-2 ring-blue-400 shadow-[0_0_15px_rgba(96,165,250,0.8)] animate-pulse' : ''}`} 
+              className={`absolute inset-0 backface-hidden obsidian-border rounded-md overflow-hidden flex flex-col transition-all duration-500 ${mp >= 100 ? 'ring-2 animate-pulse' : ''}`} 
+              style={{ 
+                boxShadow: mp >= 100 ? `0 0 15px ${biomeColor}CC` : `0 0 5px ${biomeColor}40`,
+                borderColor: mp >= 100 ? biomeColor : undefined,
+                outlineColor: mp >= 100 ? biomeColor : undefined
+              }}
               onClick={handleFlip}
             >
               <img 
@@ -144,7 +151,14 @@ export const Card: React.FC<CardProps> = ({
         transition={{ type: 'spring', stiffness: 260, damping: 20 }}
       >
         {/* Front */}
-        <div className={`absolute inset-0 backface-hidden obsidian-border rounded-xl overflow-hidden flex flex-col ${isLocked ? 'grayscale opacity-50' : ''} ${isActive ? 'ring-2 ring-luminary glow-cyan' : ''} ${mp >= 100 ? 'ring-4 ring-blue-400 shadow-[0_0_30px_rgba(96,165,250,0.8)] animate-pulse' : ''}`}>
+        <div 
+          className={`absolute inset-0 backface-hidden obsidian-border rounded-xl overflow-hidden flex flex-col transition-all duration-500 ${isLocked ? 'grayscale opacity-50' : ''} ${isActive ? 'ring-2' : ''} ${mp >= 100 ? 'ring-4 animate-pulse' : ''}`}
+          style={{ 
+            boxShadow: isActive || mp >= 100 ? `0 0 30px ${biomeColor}80` : 'none',
+            borderColor: isActive || mp >= 100 ? biomeColor : undefined,
+            outlineColor: isActive || mp >= 100 ? biomeColor : undefined
+          }}
+        >
           <div className="relative flex-1 cursor-pointer" onClick={handleFlip}>
             <img 
               src={paragon.portrait} 

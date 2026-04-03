@@ -58,6 +58,19 @@ export interface GameStoreState {
   lastSaved: number;
   lastLogout: number;
   hasHydrated: boolean;
+
+  // Boss Reward UI State
+  bossDropSuccess: boolean | null;
+  lastBossShardReward: number;
+  totalBossShardsCollected: number;
+
+  // Enemy Reward UI State
+  lastEnemyRewards: {
+    gold: number;
+    xp: number;
+    shards: number;
+    timestamp: number;
+  } | null;
 }
 
 export interface GameStoreActions {
@@ -77,6 +90,8 @@ export interface GameStoreActions {
   descendFloor: () => void;
   calculateOfflineProgress: () => { gold: number; xp: number; kills: number; timeAway: number } | null;
   claimOfflineRewards: (gold: number, xp: number) => void;
+  resetBossDropFlag: () => void;
+  defeatEnemy: (goldMultiplier?: number) => void;
 }
 
 export type GameStore = GameStoreState & GameStoreActions;

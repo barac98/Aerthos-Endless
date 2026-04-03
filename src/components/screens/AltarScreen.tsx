@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Sparkles } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { PermanentStatId } from '../../types';
-import { STAT_METADATA } from '../../constants';
+import { STAT_METADATA, BIOMES } from '../../constants';
 import { useHoldPress } from '../../hooks/useHoldPress';
 
 interface AltarScreenProps {
@@ -12,6 +12,8 @@ interface AltarScreenProps {
 
 export const AltarScreen: React.FC<AltarScreenProps> = ({ setShowArchive }) => {
   const store = useGameStore();
+  const biomeIndex = Math.min(Math.floor((store.currentFloor - 1) / 50), BIOMES.length - 1);
+  const currentBiome = BIOMES[biomeIndex];
 
   return (
     <motion.div 
@@ -35,6 +37,7 @@ export const AltarScreen: React.FC<AltarScreenProps> = ({ setShowArchive }) => {
             level={store.permanentUpgrades[statId]}
             onUpgrade={() => store.purchaseAltarUpgrade(index)}
             essence={store.essence}
+            biomeColor={currentBiome.color}
           />
         ))}
       </div>
@@ -61,7 +64,7 @@ export const AltarScreen: React.FC<AltarScreenProps> = ({ setShowArchive }) => {
   );
 };
 
-const AltarSlot: React.FC<{ statId: PermanentStatId, level: number, onUpgrade: () => void, essence: number }> = ({ statId, level, onUpgrade, essence }) => {
+const AltarSlot: React.FC<{ statId: PermanentStatId, level: number, onUpgrade: () => void, essence: number, biomeColor: string }> = ({ statId, level, onUpgrade, essence, biomeColor }) => {
   const metadata = STAT_METADATA[statId];
   const cost = Math.floor(5 * Math.pow(2, level - 1));
   const canAfford = essence >= cost;
@@ -79,6 +82,10 @@ const AltarSlot: React.FC<{ statId: PermanentStatId, level: number, onUpgrade: (
       className={`relative p-3 sm:p-6 obsidian-border rounded-xl bg-black/40 flex flex-col items-center gap-2 sm:gap-4 w-full group overflow-hidden transition-all ${
         canAfford ? 'hover:bg-white/5' : 'opacity-70 grayscale'
       }`}
+      style={{ 
+        boxShadow: canAfford ? `0 0 20px ${biomeColor}30` : 'none',
+        borderColor: canAfford ? `${biomeColor}40` : undefined
+      }}
     >
       {/* Shimmer Effect */}
       <motion.div 

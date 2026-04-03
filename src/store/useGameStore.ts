@@ -96,7 +96,7 @@ export const useGameStore = create<GameStore>()(
       currentFloor: 1,
       highestFloor: 1,
       totalResets: 0,
-      activeTeam: [null, null, null, null, null],
+      activeTeam: ['kaelen-bold', null, null, null, null],
       ownedParagons: [{ id: 'kaelen-bold', level: 1, xp: 0, nextLevelXp: 100 }],
       temporalUpgrades: { atk: 1, speed: 1, crit: 1, gold: 1 },
       permanentUpgrades: {
@@ -114,6 +114,10 @@ export const useGameStore = create<GameStore>()(
       lastSaved: Date.now(),
       lastLogout: Date.now(),
       hasHydrated: false,
+      bossDropSuccess: null,
+      lastBossShardReward: 0,
+      totalBossShardsCollected: 0,
+      lastEnemyRewards: null,
 
       // Actions
       setHasHydrated: (state) => set({ hasHydrated: state }),
@@ -325,6 +329,83 @@ export const useGameStore = create<GameStore>()(
         get().addGold(gold);
         get().addXpToTeam(xp);
       },
+
+      resetBossDropFlag: () => set({ bossDropSuccess: null }),
+
+      defeatEnemy: (goldMultiplier = 1) => set((state) => {
+        const isBoss = state.currentFloor % 10 === 0;
+        
+        // 1. Gold Drop
+        const temporalGoldMult = 1 + (state.temporalUpgrades.gold - 1) * 0.15;
+        const goldGain = Math.floor(state.currentFloor * 10 * (1 + (state.permanentUpgrades.goldMult - 1) * 0.1) * temporalGoldMult * goldMultiplier);
+        
+        // 2. XP Distribution
+        const xpGain = isBoss ? 50 : 5;
+        
+        // 3. Shard Drop Logic
+        let shardReward = 0;
+        let bossDropSuccess = null;
+        let totalBossShardsCollected = state.totalBossShardsCollected;
+
+        if (isBoss) {
+          const roll = Math.random();
+          if (roll < 0.3) {
+            shardReward = Math.floor(state.currentFloor / 10);
+            bossDropSuccess = true;
+            totalBossShardsCollected += shardReward;
+          } else {
+            bossDropSuccess = false;
+          }
+        } else if (Math.random() < 0.05) {
+          // Normal monster shard drop (keep existing logic or update?)
+          // User didn't specify changing normal drops, but let's keep it for consistency
+          const shardMult = 1 + (state.permanentUpgrades.shardMult - 1) * 0.1;
+          shardReward = Math.floor((Math.random() * 3 + 1) * shardMult);
+        }
+
+        // Apply rewards (using nested set or just returning object)
+        // We need to trigger addXpToTeam logic too.
+        // Since we are inside set, we can't easily call other actions that use set.
+        // But we can just inline the logic or use get() if we were outside.
+        // Let's inline the XP logic for simplicity or call it after.
+        
+        // Actually, let's just return the new state for resources and floor.
+        // For XP, we'll need to do the same mapping.
+        
+        const activeIds = state.activeTeam.filter(id => id !== null) as string[];
+        const nextOwned = state.ownedParagons.map(p => {
+          if (!activeIds.includes(p.id)) return p;
+          let newXp = p.xp + xpGain;
+          let newLevel = p.level;
+          let nextReq = p.nextLevelXp;
+          while (newXp >= nextReq) {
+            newXp -= nextReq;
+            newLevel++;
+            nextReq = Math.floor(100 * Math.pow(1.5, newLevel - 1));
+          }
+          return { ...p, xp: newXp, level: newLevel, nextLevelXp: nextReq };
+        });
+
+        const nextFloor = state.autoProgress ? state.currentFloor + 1 : state.currentFloor;
+
+        return {
+          gold: state.gold + goldGain,
+          soulShards: state.soulShards + shardReward,
+          ownedParagons: nextOwned,
+          currentFloor: nextFloor,
+          highestFloor: Math.max(state.highestFloor, nextFloor),
+          bossDropSuccess,
+          lastBossShardReward: shardReward,
+          totalBossShardsCollected,
+          lastEnemyRewards: {
+            gold: goldGain,
+            xp: xpGain,
+            shards: shardReward,
+            timestamp: Date.now()
+          },
+          lastSaved: Date.now()
+        };
+      }),
     }),
     {
       name: 'aerthos-save-v2',

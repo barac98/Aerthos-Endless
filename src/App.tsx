@@ -261,32 +261,10 @@ export default function App() {
           // Enemy Defeated - Schedule store updates to avoid React warning
           Promise.resolve().then(() => {
             const currentState = useGameStore.getState();
-            
-            // Gold Drop
             const goldBonus = goldBonusTimer > 0 ? 1.2 : 1;
-            const temporalGoldMult = 1 + (currentState.temporalUpgrades.gold - 1) * 0.15;
-            const goldGain = Math.floor(currentState.currentFloor * 10 * (1 + (currentState.permanentUpgrades.goldMult - 1) * 0.1) * goldBonus * temporalGoldMult);
-            currentState.addGold(goldGain);
+            currentState.defeatEnemy(goldBonus);
             
-            // Soul Shard Drop
-            const isBoss = currentState.currentFloor % 10 === 0;
-            const shardMult = 1 + (currentState.permanentUpgrades.shardMult - 1) * 0.1;
-            
-            if (isBoss) {
-              const bossShards = Math.floor((Math.random() * 6 + 5) * shardMult);
-              currentState.addSoulShards(bossShards);
-            } else if (Math.random() < 0.05) {
-              const normalShards = Math.floor((Math.random() * 3 + 1) * shardMult);
-              currentState.addSoulShards(normalShards);
-            }
-
-            // XP Distribution
-            const xpGain = isBoss ? 50 : 5;
-            currentState.addXpToTeam(xpGain);
-
-            if (currentState.autoProgress) {
-              currentState.climbFloor();
-            } else {
+            if (!currentState.autoProgress) {
               // Reset same floor
               const nextMaxHp = Math.floor(100 * Math.pow(1.15, currentState.currentFloor - 1));
               setMaxEnemyHp(nextMaxHp);
