@@ -118,11 +118,11 @@ export default function App() {
         const levelMult = owned ? 1 + (owned.level - 1) * 0.1 : 1;
         
         // New Multipliers
-        const temporalAtkMult = 1 + (state.temporalUpgrades.atk - 1) * 0.2;
+        const temporalAtkMult = 1 + state.temporalUpgrades.atk * 0.1;
         const permanentAtkMult = 1 + state.permanentUpgrades.atkMult * 0.1;
-        const temporalSpeedMult = 1 + (state.temporalUpgrades.speed - 1) * 0.1;
+        const temporalSpeedMult = 1 + state.temporalUpgrades.speed * 0.05;
         const permanentSpeedMult = 1 + state.permanentUpgrades.speedMult * 0.05;
-        const temporalCritMult = (state.temporalUpgrades.crit - 1) * 0.02;
+        const temporalCritMult = state.temporalUpgrades.crit * 0.01;
         const permanentCritMult = state.permanentUpgrades.critRate * 0.01;
         
         let dmg = p.baseAtk * levelMult * temporalAtkMult * permanentAtkMult * soulChainMult;
@@ -186,7 +186,7 @@ export default function App() {
 
             // Add damage number for every attack
             newDamageNumbers.push({
-              id: Date.now() + Math.random(),
+              id: Math.random() + Date.now() + Math.random(),
               value: Math.floor(finalDmg),
               color: p.color,
               isCrit
@@ -211,7 +211,7 @@ export default function App() {
         }
         
         // Add Ability Name Visual
-        const abilityId = Date.now() + Math.random();
+        const abilityId = Math.random() + Date.now() + Math.random();
         setActiveAbilities(prev => [...prev, { id: abilityId, name: ability.name, color: ability.color }]);
         setTimeout(() => {
           setActiveAbilities(prev => prev.filter(a => a.id !== abilityId));
@@ -300,67 +300,20 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-obsidian text-white font-gothic overflow-hidden">
-      {/* Header: Resources & Controls */}
-      <header className="h-auto min-h-16 border-b border-white/10 bg-black/50 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between px-4 py-2 sm:py-0 gap-2 sm:gap-0 z-50">
-        <div className="flex items-center justify-between w-full sm:w-auto gap-4 sm:gap-8 overflow-x-auto no-scrollbar py-1">
-          <div className="flex items-center gap-4 sm:gap-8">
-            <div className="flex items-center gap-2 shrink-0">
-              <Coins className="w-4 h-4 text-yellow-500" />
-              <span className="text-xs sm:text-sm font-runic font-bold">{store.gold.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Sparkles className="w-4 h-4 text-shadow-magic" />
-              <span className="text-xs sm:text-sm font-runic font-bold">{store.essence.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Shield className="w-4 h-4 text-luminary" />
-              <span className="text-xs sm:text-sm font-runic font-bold">{store.soulShards.toLocaleString()}</span>
-            </div>
+      {/* Header: Resources Only */}
+      <header className="h-12 border-b border-white/10 bg-black/50 backdrop-blur-md flex items-center justify-center px-4 z-50">
+        <div className="flex items-center gap-6 sm:gap-12 overflow-x-auto no-scrollbar py-1">
+          <div className="flex items-center gap-2 shrink-0">
+            <Coins className="w-4 h-4 text-yellow-500" />
+            <span className="text-xs sm:text-sm font-runic font-bold">{store.gold.toLocaleString()}</span>
           </div>
-
-          {/* Mobile Timer & Speed (Visible on mobile in the same row if space allows, or grouped) */}
-          <div className="flex sm:hidden items-center gap-3 shrink-0 ml-auto">
-            <div className={`text-sm font-runic font-bold ${floorTimer < 10 ? 'text-red-500 animate-pulse' : 'text-luminary'}`}>
-              {floorTimer.toFixed(1)}s
-            </div>
-            <button
-              onClick={() => {
-                const nextSpeed = store.gameSpeed === 1 ? 2 : store.gameSpeed === 2 ? 4 : 1;
-                store.setGameSpeed(nextSpeed);
-              }}
-              className="px-2 py-1 bg-white/5 rounded border border-white/10 text-[8px] font-bold uppercase transition-all"
-            >
-              x{store.gameSpeed}
-            </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Shield className="w-4 h-4 text-luminary" />
+            <span className="text-xs sm:text-sm font-runic font-bold">{store.soulShards.toLocaleString()}</span>
           </div>
-        </div>
-        
-        <div className="text-center order-first sm:order-none">
-          <h1 className="text-sm sm:text-lg font-bold tracking-[0.2em] sm:tracking-[0.3em] text-white uppercase">Aerthos Endless</h1>
-          <p className="text-[8px] sm:text-[10px] text-luminary tracking-widest uppercase">Floor {store.currentFloor}</p>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-6">
-          <div className="flex items-center gap-4 border-r border-white/10 pr-6">
-            <div className="flex flex-col items-end">
-              <span className="text-[8px] uppercase tracking-widest text-white/40">Time Remaining</span>
-              <div className={`text-lg font-runic font-bold ${floorTimer < 10 ? 'text-red-500 animate-pulse' : 'text-luminary'}`}>
-                {floorTimer.toFixed(1)}s
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                const nextSpeed = store.gameSpeed === 1 ? 2 : store.gameSpeed === 2 ? 4 : 1;
-                store.setGameSpeed(nextSpeed);
-              }}
-              className="px-3 py-1.5 bg-black/40 rounded-lg border border-white/10 text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-white/10 active:scale-95 shadow-[0_0_15px_rgba(0,255,255,0.1)]"
-            >
-              Speed: <span className="text-luminary">x{store.gameSpeed}</span>
-            </button>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] text-white/50 uppercase">Highest Floor</p>
-            <p className="text-xs font-runic">{store.highestFloor}</p>
+          <div className="flex items-center gap-2 shrink-0">
+            <Sparkles className="w-4 h-4 text-shadow-magic" />
+            <span className="text-xs sm:text-sm font-runic font-bold">{store.essence.toLocaleString()}</span>
           </div>
         </div>
       </header>
@@ -381,6 +334,8 @@ export default function App() {
               activeAbilities={activeAbilities}
               floorTimer={floorTimer}
               screenEffect={screenEffect}
+              gameSpeed={store.gameSpeed}
+              onSetGameSpeed={store.setGameSpeed}
             />
           )}
 
@@ -436,7 +391,7 @@ function NavButton({ active, onClick, icon, label }: { active: boolean, onClick:
       onClick={onClick}
       className={`flex flex-col items-center gap-0.5 sm:gap-1 transition-all ${active ? 'text-luminary scale-105 sm:scale-110' : 'text-white/40 hover:text-white/70'}`}
     >
-      <div className={`${active ? 'glow-cyan' : ''}`}>
+      <div className={`${active ? 'glow-cyan drop-shadow-[0_0_8px_rgba(0,255,255,0.8)]' : ''}`}>
         {React.cloneElement(icon as React.ReactElement, { size: 20, className: 'sm:w-6 sm:h-6' })}
       </div>
       <span className="text-[7px] sm:text-[10px] uppercase font-bold tracking-widest">{label}</span>

@@ -168,8 +168,8 @@ export const Card: React.FC<CardProps> = ({
             />
 
             {/* Level Badge */}
-            <div className="absolute top-2 right-2 bg-black/80 px-2 py-0.5 rounded-md border border-white/20 z-10">
-              <span className="text-xs font-bold text-luminary tracking-widest">Lv.{level}</span>
+            <div className="absolute top-2 right-2 bg-black/90 px-2.5 py-1 rounded-md border-2 border-white/30 z-10 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
+              <span className="text-sm font-bold text-luminary tracking-widest drop-shadow-sm">Lv.{level}</span>
             </div>
 
             {/* Level Up Animation Overlay */}
@@ -188,9 +188,9 @@ export const Card: React.FC<CardProps> = ({
               )}
             </AnimatePresence>
 
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-obsidian to-transparent p-4">
-              <h3 className="text-xl font-bold text-white tracking-wider">{paragon.name}</h3>
-              <p className="text-xs text-luminary uppercase tracking-widest">{paragon.race} • {paragon.affinity}</p>
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-obsidian to-transparent p-4 flex flex-col items-center">
+              <h3 className="text-xl font-bold text-white tracking-wider text-center">{paragon.name}</h3>
+              <p className="text-xs text-luminary uppercase tracking-widest text-center">{paragon.race} • {paragon.affinity}</p>
             </div>
 
             {/* MP Bar */}
@@ -229,9 +229,13 @@ export const Card: React.FC<CardProps> = ({
                 }}
                 className={`w-full py-1.5 rounded text-[10px] font-bold uppercase tracking-widest transition-all ${
                   isActive 
-                    ? 'bg-red-500/20 border border-red-500/50 text-red-400 hover:bg-red-500/40' 
+                    ? 'bg-zinc-800 border-2 text-zinc-300 hover:bg-zinc-700' 
                     : 'bg-luminary/20 border border-luminary/50 text-luminary hover:bg-luminary/40'
                 }`}
+                style={{
+                  borderColor: isActive ? paragon.color : undefined,
+                  boxShadow: isActive ? `0 0 10px ${paragon.color}40` : 'none'
+                }}
               >
                 {isActive ? 'Recall' : 'Deploy'}
               </button>

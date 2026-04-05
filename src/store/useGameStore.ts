@@ -278,11 +278,11 @@ export const useGameStore = create<GameStore>()(
         team.forEach(p => {
           const owned = state.ownedParagons.find(op => op.id === p.id);
           const levelMult = owned ? 1 + (owned.level - 1) * 0.1 : 1;
-          const temporalAtkMult = 1 + (state.temporalUpgrades.atk - 1) * 0.2;
+          const temporalAtkMult = 1 + state.temporalUpgrades.atk * 0.1;
           const permanentAtkMult = 1 + state.permanentUpgrades.atkMult * 0.1;
-          const temporalSpeedMult = 1 + (state.temporalUpgrades.speed - 1) * 0.1;
+          const temporalSpeedMult = 1 + state.temporalUpgrades.speed * 0.05;
           const permanentSpeedMult = 1 + state.permanentUpgrades.speedMult * 0.05;
-          const temporalCritMult = (state.temporalUpgrades.crit - 1) * 0.02;
+          const temporalCritMult = state.temporalUpgrades.crit * 0.01;
           const permanentCritMult = state.permanentUpgrades.critRate * 0.01;
           
           let dmg = p.baseAtk * levelMult * temporalAtkMult * permanentAtkMult * soulChainMult;
@@ -312,8 +312,8 @@ export const useGameStore = create<GameStore>()(
         if (totalKills <= 0) return null;
 
         // 5. Rewards
-        const temporalGoldMult = 1 + (state.temporalUpgrades.gold - 1) * 0.15;
-        const baseGold = state.currentFloor * 10 * (1 + (state.permanentUpgrades.goldMult - 1) * 0.1) * temporalGoldMult;
+        const temporalGoldMult = 1 + state.temporalUpgrades.gold * 0.1;
+        const baseGold = state.currentFloor * 10 * (1 + state.permanentUpgrades.goldMult * 0.1) * temporalGoldMult;
         const baseXP = 5; // Normal monster XP
 
         const efficiency = 0.7;
@@ -339,8 +339,8 @@ export const useGameStore = create<GameStore>()(
         const isBoss = state.currentFloor % 10 === 0;
         
         // 1. Gold Drop
-        const temporalGoldMult = 1 + (state.temporalUpgrades.gold - 1) * 0.15;
-        const goldGain = Math.floor(state.currentFloor * 10 * (1 + (state.permanentUpgrades.goldMult - 1) * 0.1) * temporalGoldMult * goldMultiplier);
+        const temporalGoldMult = 1 + state.temporalUpgrades.gold * 0.1;
+        const goldGain = Math.floor(state.currentFloor * 10 * (1 + state.permanentUpgrades.goldMult * 0.1) * temporalGoldMult * goldMultiplier);
         
         // 2. XP Distribution
         const xpGain = isBoss ? 50 : 5;
@@ -390,13 +390,14 @@ export const useGameStore = create<GameStore>()(
         });
 
         const nextFloor = state.autoProgress ? state.currentFloor + 1 : state.currentFloor;
+        const potentialHighest = state.currentFloor + 1;
 
         return {
           gold: state.gold + goldGain,
           soulShards: state.soulShards + shardReward,
           ownedParagons: nextOwned,
           currentFloor: nextFloor,
-          highestFloor: Math.max(state.highestFloor, nextFloor),
+          highestFloor: Math.max(state.highestFloor, potentialHighest),
           bossDropSuccess,
           lastBossShardReward: shardReward,
           totalBossShardsCollected,
