@@ -71,6 +71,9 @@ export interface GameStoreState {
     shards: number;
     timestamp: number;
   } | null;
+  
+  // PWA Update State
+  updateAvailable: boolean;
 }
 
 export interface GameStoreActions {
@@ -92,6 +95,7 @@ export interface GameStoreActions {
   claimOfflineRewards: (gold: number, xp: number) => void;
   resetBossDropFlag: () => void;
   defeatEnemy: (goldMultiplier?: number) => void;
+  setUpdateAvailable: (available: boolean) => void;
 }
 
 export type GameStore = GameStoreState & GameStoreActions;

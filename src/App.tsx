@@ -14,6 +14,7 @@ import { AltarScreen } from './components/screens/AltarScreen';
 import { LoreScreen } from './components/screens/LoreScreen';
 import { StatArchive } from './components/StatArchive';
 import { WelcomeBackModal } from './components/WelcomeBackModal';
+import { NewVersionModal } from './components/NewVersionModal';
 
 type Tab = 'tower' | 'training' | 'team' | 'recruit' | 'altar' | 'lore';
 
@@ -379,6 +380,8 @@ export default function App() {
         }} 
         rewards={offlineRewards} 
       />
+
+      <NewVersionModal />
 
       <SpeedInsights />
     </div>

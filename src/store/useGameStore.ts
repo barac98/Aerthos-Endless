@@ -118,8 +118,10 @@ export const useGameStore = create<GameStore>()(
       lastBossShardReward: 0,
       totalBossShardsCollected: 0,
       lastEnemyRewards: null,
+      updateAvailable: false,
 
       // Actions
+      setUpdateAvailable: (available) => set({ updateAvailable: available }),
       setHasHydrated: (state) => set({ hasHydrated: state }),
       
       addGold: (amount) => set((state) => ({ 
@@ -415,7 +417,7 @@ export const useGameStore = create<GameStore>()(
       name: 'aerthos-save-v2',
       version: 2,
       partialize: (state) => {
-        const { ...rest } = state;
+        const { updateAvailable, hasHydrated, ...rest } = state;
         return { ...rest, lastLogout: Date.now() };
       },
       migrate: (persistedState: any, version: number) => {
