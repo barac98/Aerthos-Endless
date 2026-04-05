@@ -38,7 +38,7 @@ export interface GameStoreState {
   totalResets: number;
   
   // Team & Collection
-  activeTeam: (string | null)[]; // 5 slots
+  activeTeam: (string | null)[]; // 4 slots
   ownedParagons: OwnedParagon[];
   
   // Upgrades

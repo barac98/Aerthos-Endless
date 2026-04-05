@@ -5,9 +5,10 @@ export const LoreScreen: React.FC = () => {
   return (
     <motion.div 
       key="lore"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 0, x: 100 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -100 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="max-w-3xl mx-auto space-y-12 py-12"
     >
       <div className="space-y-4">

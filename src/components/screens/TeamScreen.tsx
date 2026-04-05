@@ -28,9 +28,10 @@ export const TeamScreen: React.FC<TeamScreenProps> = ({ paragonMp }) => {
   return (
     <motion.div 
       key="team"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 0, x: 100 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -100 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-8 justify-items-center content-start"
     >
       {unlockedParagons.map(p => {

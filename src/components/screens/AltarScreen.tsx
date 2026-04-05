@@ -18,9 +18,10 @@ export const AltarScreen: React.FC<AltarScreenProps> = ({ setShowArchive }) => {
   return (
     <motion.div 
       key="altar"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 0, x: 100 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -100 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="max-w-4xl mx-auto flex flex-col items-center gap-6 sm:gap-12 pt-6 sm:pt-12"
     >
       <div className="text-center">

@@ -36,7 +36,7 @@ const mockStorage = {
           currentFloor: 1,
           highestFloor: 1,
           totalResets: 0,
-          activeTeam: ['silas-vane', 'kaelen-bold', null, null, null],
+          activeTeam: ['silas-vane', 'kaelen-bold', null, null],
           ownedParagons: [
             { id: 'kaelen-bold', level: 1, xp: 0, nextLevelXp: 100 },
             { id: 'silas-vane', level: 1, xp: 0, nextLevelXp: 100 }
@@ -96,7 +96,7 @@ export const useGameStore = create<GameStore>()(
       currentFloor: 1,
       highestFloor: 1,
       totalResets: 0,
-      activeTeam: ['kaelen-bold', null, null, null, null],
+      activeTeam: ['kaelen-bold', null, null, null],
       ownedParagons: [{ id: 'kaelen-bold', level: 1, xp: 0, nextLevelXp: 100 }],
       temporalUpgrades: { atk: 1, speed: 1, crit: 1, gold: 1 },
       permanentUpgrades: {
@@ -271,6 +271,9 @@ export const useGameStore = create<GameStore>()(
         const activeIds = state.activeTeam.filter((id): id is string => id !== null);
         const team = activeIds.map(id => INITIAL_PARAGONS.find(p => p.id === id)).filter((p): p is typeof INITIAL_PARAGONS[0] => !!p);
         
+        // Soul Chain: +10% ATK per additional member (2 members = 10%, 3 = 20%, 4 = 30%)
+        const soulChainMult = 1 + (activeIds.length - 1) * 0.1;
+
         let currentTotalDps = 0;
         team.forEach(p => {
           const owned = state.ownedParagons.find(op => op.id === p.id);
@@ -282,7 +285,7 @@ export const useGameStore = create<GameStore>()(
           const temporalCritMult = (state.temporalUpgrades.crit - 1) * 0.02;
           const permanentCritMult = state.permanentUpgrades.critRate * 0.01;
           
-          let dmg = p.baseAtk * levelMult * temporalAtkMult * permanentAtkMult;
+          let dmg = p.baseAtk * levelMult * temporalAtkMult * permanentAtkMult * soulChainMult;
           if (p.id === 'kaelen-bold') dmg *= (1 + state.currentFloor * 0.05);
           if (p.id === 'oghul') dmg *= 1.2;
 

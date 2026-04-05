@@ -15,9 +15,10 @@ export const TrainingScreen: React.FC = () => {
   return (
     <motion.div 
       key="training"
-      initial={{ opacity: 0, x: 20 }}
+      initial={{ opacity: 0, x: 100 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
+      exit={{ opacity: 0, x: -100 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="max-w-4xl mx-auto flex flex-col items-center gap-6 pt-4"
     >
       <div className="text-center">

@@ -101,6 +101,9 @@ export default function App() {
 
       const activeIds = state.activeTeam.filter((id): id is string => id !== null);
       
+      // Soul Chain: +10% ATK per additional member (2 members = 10%, 3 = 20%, 4 = 30%)
+      const soulChainMult = 1 + (activeIds.length - 1) * 0.1;
+
       // Explicitly find team members to avoid any filter issues
       const team = activeIds.map(id => INITIAL_PARAGONS.find(p => p.id === id)).filter((p): p is typeof INITIAL_PARAGONS[0] => !!p);
       
@@ -122,7 +125,7 @@ export default function App() {
         const temporalCritMult = (state.temporalUpgrades.crit - 1) * 0.02;
         const permanentCritMult = state.permanentUpgrades.critRate * 0.01;
         
-        let dmg = p.baseAtk * levelMult * temporalAtkMult * permanentAtkMult;
+        let dmg = p.baseAtk * levelMult * temporalAtkMult * permanentAtkMult * soulChainMult;
         
         // Simple ability logic
         if (p.id === 'kaelen-bold') dmg *= (1 + state.currentFloor * 0.05);
@@ -297,20 +300,38 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-obsidian text-white font-gothic overflow-hidden">
-      {/* Header: Resources */}
+      {/* Header: Resources & Controls */}
       <header className="h-auto min-h-16 border-b border-white/10 bg-black/50 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between px-4 py-2 sm:py-0 gap-2 sm:gap-0 z-50">
-        <div className="flex items-center gap-4 sm:gap-8 overflow-x-auto w-full sm:w-auto no-scrollbar py-1">
-          <div className="flex items-center gap-2 shrink-0">
-            <Coins className="w-4 h-4 text-yellow-500" />
-            <span className="text-xs sm:text-sm font-runic font-bold">{store.gold.toLocaleString()}</span>
+        <div className="flex items-center justify-between w-full sm:w-auto gap-4 sm:gap-8 overflow-x-auto no-scrollbar py-1">
+          <div className="flex items-center gap-4 sm:gap-8">
+            <div className="flex items-center gap-2 shrink-0">
+              <Coins className="w-4 h-4 text-yellow-500" />
+              <span className="text-xs sm:text-sm font-runic font-bold">{store.gold.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Sparkles className="w-4 h-4 text-shadow-magic" />
+              <span className="text-xs sm:text-sm font-runic font-bold">{store.essence.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Shield className="w-4 h-4 text-luminary" />
+              <span className="text-xs sm:text-sm font-runic font-bold">{store.soulShards.toLocaleString()}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Sparkles className="w-4 h-4 text-shadow-magic" />
-            <span className="text-xs sm:text-sm font-runic font-bold">{store.essence.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Shield className="w-4 h-4 text-luminary" />
-            <span className="text-xs sm:text-sm font-runic font-bold">{store.soulShards.toLocaleString()}</span>
+
+          {/* Mobile Timer & Speed (Visible on mobile in the same row if space allows, or grouped) */}
+          <div className="flex sm:hidden items-center gap-3 shrink-0 ml-auto">
+            <div className={`text-sm font-runic font-bold ${floorTimer < 10 ? 'text-red-500 animate-pulse' : 'text-luminary'}`}>
+              {floorTimer.toFixed(1)}s
+            </div>
+            <button
+              onClick={() => {
+                const nextSpeed = store.gameSpeed === 1 ? 2 : store.gameSpeed === 2 ? 4 : 1;
+                store.setGameSpeed(nextSpeed);
+              }}
+              className="px-2 py-1 bg-white/5 rounded border border-white/10 text-[8px] font-bold uppercase transition-all"
+            >
+              x{store.gameSpeed}
+            </button>
           </div>
         </div>
         
@@ -319,7 +340,24 @@ export default function App() {
           <p className="text-[8px] sm:text-[10px] text-luminary tracking-widest uppercase">Floor {store.currentFloor}</p>
         </div>
 
-        <div className="hidden sm:flex items-center gap-4">
+        <div className="hidden sm:flex items-center gap-6">
+          <div className="flex items-center gap-4 border-r border-white/10 pr-6">
+            <div className="flex flex-col items-end">
+              <span className="text-[8px] uppercase tracking-widest text-white/40">Time Remaining</span>
+              <div className={`text-lg font-runic font-bold ${floorTimer < 10 ? 'text-red-500 animate-pulse' : 'text-luminary'}`}>
+                {floorTimer.toFixed(1)}s
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const nextSpeed = store.gameSpeed === 1 ? 2 : store.gameSpeed === 2 ? 4 : 1;
+                store.setGameSpeed(nextSpeed);
+              }}
+              className="px-3 py-1.5 bg-black/40 rounded-lg border border-white/10 text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-white/10 active:scale-95 shadow-[0_0_15px_rgba(0,255,255,0.1)]"
+            >
+              Speed: <span className="text-luminary">x{store.gameSpeed}</span>
+            </button>
+          </div>
           <div className="text-right">
             <p className="text-[10px] text-white/50 uppercase">Highest Floor</p>
             <p className="text-xs font-runic">{store.highestFloor}</p>
