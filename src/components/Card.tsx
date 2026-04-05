@@ -58,7 +58,7 @@ export const Card: React.FC<CardProps> = ({
 
   if (variant === 'small') {
     return (
-      <div className="relative w-20 sm:w-28 aspect-[2/3] perspective-1000 group cursor-pointer">
+      <div className="relative w-20 sm:w-28 aspect-[2/3] perspective-1000 group cursor-pointer" style={{ touchAction: 'manipulation' }}>
         <motion.div
           className="relative w-full h-full transition-all duration-500 preserve-3d"
           animate={{ 
@@ -144,7 +144,7 @@ export const Card: React.FC<CardProps> = ({
   }
 
   return (
-    <div className="relative w-full max-w-[256px] aspect-[2/3] perspective-1000 group cursor-pointer">
+    <div className="relative w-full max-w-[256px] aspect-[2/3] perspective-1000 group cursor-pointer" style={{ touchAction: 'manipulation' }}>
       <motion.div
         className="relative w-full h-full transition-all duration-500 preserve-3d"
         animate={{ rotateY: isFlipped ? 180 : 0 }}

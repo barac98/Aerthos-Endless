@@ -302,7 +302,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-obsidian text-white font-gothic overflow-hidden">
+    <div className="h-screen flex flex-col bg-obsidian text-white font-gothic overflow-hidden select-none touch-manipulation">
       {/* Header: Resources Only */}
       <header className="h-12 border-b border-white/10 bg-black/50 backdrop-blur-md flex items-center justify-center px-4 z-50">
         <div className="flex items-center gap-6 sm:gap-12 overflow-x-auto no-scrollbar py-1">
