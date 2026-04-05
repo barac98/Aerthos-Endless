@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { SpeedInsights } from "@vercel/speed-insights/react"
-import { Sword, Users, ShoppingCart, Sparkles, BookOpen, Coins, Zap, Shield } from 'lucide-react';
+import { Sword, Users, ShoppingCart, Sparkles, BookOpen, Coins, Zap, Shield, Settings } from 'lucide-react';
 import { useGameStore } from './store/useGameStore';
 import { INITIAL_PARAGONS } from './types';
 
@@ -12,11 +12,13 @@ import { TeamScreen } from './components/screens/TeamScreen';
 import { RecruitScreen } from './components/screens/RecruitScreen';
 import { AltarScreen } from './components/screens/AltarScreen';
 import { LoreScreen } from './components/screens/LoreScreen';
+import { SettingsScreen } from './components/screens/SettingsScreen';
 import { StatArchive } from './components/StatArchive';
 import { WelcomeBackModal } from './components/WelcomeBackModal';
 import { NewVersionModal } from './components/NewVersionModal';
+import { APP_VERSION } from './constants';
 
-type Tab = 'tower' | 'training' | 'team' | 'recruit' | 'altar' | 'lore';
+type Tab = 'tower' | 'training' | 'team' | 'recruit' | 'altar' | 'lore' | 'settings';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('tower');
@@ -349,6 +351,8 @@ export default function App() {
           {activeTab === 'altar' && <AltarScreen setShowArchive={setShowArchive} />}
 
           {activeTab === 'lore' && <LoreScreen />}
+
+          {activeTab === 'settings' && <SettingsScreen />}
         </AnimatePresence>
 
         <AnimatePresence>
@@ -369,6 +373,7 @@ export default function App() {
         <NavButton active={activeTab === 'recruit'} onClick={() => setActiveTab('recruit')} icon={<ShoppingCart />} label="Recruit" />
         <NavButton active={activeTab === 'altar'} onClick={() => setActiveTab('altar')} icon={<Sparkles />} label="Altar" />
         <NavButton active={activeTab === 'lore'} onClick={() => setActiveTab('lore')} icon={<BookOpen />} label="Lore" />
+        <NavButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings />} label="Config" />
       </footer>
       <WelcomeBackModal 
         isOpen={showWelcomeBack} 
@@ -382,6 +387,11 @@ export default function App() {
       />
 
       <NewVersionModal />
+
+      {/* Version Display */}
+      <div className="fixed bottom-1 right-1 pointer-events-none z-[1000] opacity-30">
+        <span className="text-[10px] font-mono tracking-widest text-white/50">v{APP_VERSION}</span>
+      </div>
 
       <SpeedInsights />
     </div>

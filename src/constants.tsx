@@ -2,6 +2,8 @@ import React from 'react';
 import { Sword, Coins, Shield, Sparkles, Zap } from 'lucide-react';
 import { PermanentStatId } from './types';
 
+export const APP_VERSION = "0.5.0";
+
 export const STAT_METADATA: Record<PermanentStatId, { name: string; icon: React.ReactNode; description: string; bonusText: (lvl: number) => string }> = {
   atkMult: {
     name: 'Attack Power',
