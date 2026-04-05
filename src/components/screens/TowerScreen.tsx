@@ -85,7 +85,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
       }}
       exit={{ opacity: 0, x: -100 }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="h-[100dvh] w-full relative flex flex-col items-center justify-between overflow-hidden select-none"
+      className="h-full w-full relative flex flex-col items-center justify-between overflow-hidden select-none"
     >
       {/* Background Image - Covers entire viewport */}
       <div 
@@ -150,10 +150,10 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <div className="w-full h-full flex flex-col items-center justify-between p-1 relative z-10">
+      <div className="w-full h-full flex flex-col items-center justify-between p-0 relative z-10">
         
-        {/* Combat HUD (Top) - Compressed */}
-        <div className="w-full max-w-2xl flex items-center justify-center px-2 py-0.5">
+        {/* Combat HUD (Top) - Compact & Closer to currencies */}
+        <div className="w-full max-w-2xl flex items-center justify-center px-2 pt-1 pb-0">
           <div className="flex items-center justify-around gap-4 md:gap-8 bg-black/60 backdrop-blur-xl border border-white/10 rounded-lg px-6 py-1 shadow-2xl">
             {/* Timer */}
             <div className="flex items-center gap-1.5">
@@ -196,8 +196,8 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
           </div>
         </div>
 
-        {/* Monster Section (Middle - Squeezed to 38vh) */}
-        <div className="flex-1 w-full flex flex-col items-center justify-center relative min-h-0 max-h-[38vh]">
+        {/* Monster Section (Middle - Squeezed to 35vh) */}
+        <div className="flex-1 w-full flex flex-col items-center justify-center relative min-h-0 max-h-[35vh]">
           {/* Navigation Paddles - Anchored to Monster Area */}
           <button 
             onClick={() => store.descendFloor()}
@@ -304,51 +304,59 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                 </AnimatePresence>
               </div>
             </div>
-            
-            {/* HP Bar */}
-            <div className="w-full max-w-sm flex flex-col items-center gap-0.5 mt-1">
-              <div className="w-full h-1 md:h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5 shadow-[inset_0_1px_4px_rgba(0,0,0,0.8)]">
-                <motion.div 
-                  className="h-full bg-gradient-to-r from-red-900 via-red-600 to-luminary shadow-[0_0_10px_rgba(0,255,255,0.4)]"
-                  initial={{ width: '100%' }}
-                  animate={{ width: `${(enemyHp / maxEnemyHp) * 100}%` }}
-                />
-              </div>
-              <div className="flex justify-between w-full px-1 text-[7px] md:text-[8px] font-runic uppercase tracking-[0.1em]">
-                <span className="text-white/30">Enemy Vitality</span>
-                <span className="text-luminary/80 font-bold">
-                  {Math.ceil(enemyHp).toLocaleString()} / {maxEnemyHp.toLocaleString()}
-                </span>
-              </div>
+          </div>
+        </div>
+
+        {/* HP Bar & DPS Badge Integration */}
+        <div className="w-full max-w-sm flex flex-col items-center gap-0.5 px-4">
+          <div className="w-full flex items-center justify-between gap-3">
+            <div className="flex-1 h-1 md:h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5 shadow-[inset_0_1px_4px_rgba(0,0,0,0.8)]">
+              <motion.div 
+                className="h-full bg-gradient-to-r from-red-900 via-red-600 to-luminary shadow-[0_0_10px_rgba(0,255,255,0.4)]"
+                initial={{ width: '100%' }}
+                animate={{ width: `${(enemyHp / maxEnemyHp) * 100}%` }}
+              />
             </div>
+            {/* DPS Badge Integrated Right */}
+            <div className="flex items-center gap-1 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded border border-white/10">
+              <span className="text-[6px] uppercase tracking-widest text-white/40">DPS</span>
+              <span className="text-[9px] font-runic font-bold text-luminary">{Math.floor(totalDps).toLocaleString()}</span>
+            </div>
+          </div>
+          <div className="flex justify-between w-full px-1 text-[7px] md:text-[8px] font-runic uppercase tracking-[0.1em]">
+            <span className="text-white/30">Enemy Vitality</span>
+            <span className="text-luminary/80 font-bold">
+              {Math.ceil(enemyHp).toLocaleString()} / {maxEnemyHp.toLocaleString()}
+            </span>
           </div>
         </div>
 
         {/* Team Section (Bottom - Soul Chain) */}
-        <div className="w-full flex flex-col items-center gap-1 pb-1 min-h-0">
+        <div className="w-full flex flex-col items-center gap-1 pb-0 min-h-0">
           <div className="flex flex-col items-center gap-1 w-full min-h-0">
-            <div className="flex items-center justify-between w-full max-w-4xl px-4 relative">
-              <div className="flex items-center gap-2">
-                <h2 className="text-[7px] md:text-[9px] font-bold text-shadow-magic uppercase tracking-[0.4em] opacity-90">
-                  The Soul Chain <span className="text-white/20 mx-1">|</span> <span className="text-white/60">DPS: {Math.floor(totalDps).toLocaleString()}</span>
-                </h2>
-                <div className="h-px w-6 md:w-12 bg-shadow-magic/30" />
-              </div>
+            <div className="flex items-center gap-2 px-4 w-full max-w-4xl">
+              <h2 className="text-[7px] md:text-[9px] font-bold text-shadow-magic uppercase tracking-[0.4em] opacity-90">
+                The Soul Chain
+              </h2>
+              <div className="h-px flex-1 bg-shadow-magic/30" />
             </div>
             
-            <div className="flex flex-row gap-2 md:gap-4 h-[22vh] min-h-0 items-center mb-[10px]">
+            <div className="flex flex-row gap-2 md:gap-4 h-[130px] min-h-0 items-center mb-1">
               {activeParagons.map((p, index) => {
                 if (!p) {
                   return (
-                    <div key={`empty-${index}`} className="w-14 sm:w-20 md:w-28 h-full obsidian-border rounded-lg bg-black/20 flex items-center justify-center border-dashed border-luminary/30 shadow-[0_0_10px_rgba(0,255,255,0.05)]">
-                      <span className="text-[7px] md:text-[9px] text-luminary/20 uppercase tracking-widest text-center px-1">Vacant</span>
+                    <div key={`empty-${index}`} className="relative w-20 sm:w-28 h-full obsidian-border rounded-md bg-black/20 flex items-center justify-center border-dashed border-luminary/30 shadow-[0_0_10px_rgba(0,255,255,0.05)]">
+                      <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                        <Sparkles className="w-6 h-6 text-luminary" />
+                      </div>
+                      <div className="text-[14px] font-runic text-luminary/40">+</div>
                     </div>
                   );
                 }
                 const ownedData = store.ownedParagons.find(op => op.id === p.id);
                 return (
                   <div key={p.id} className="flex flex-col items-center gap-0.5 group h-full min-h-0">
-                    <div className="relative h-[88%] aspect-[2/3]">
+                    <div className="relative h-[85%] aspect-[2/3]">
                       <Card 
                         paragon={p} 
                         variant="small" 

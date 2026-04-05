@@ -322,7 +322,7 @@ export default function App() {
       </header>
 
       {/* Main Viewport */}
-      <main className="flex-1 overflow-y-auto relative p-2 sm:p-6">
+      <main className={`flex-1 relative ${activeTab === 'tower' ? 'overflow-hidden p-0' : 'overflow-y-auto p-2 sm:p-6'}`}>
         <AnimatePresence mode="wait">
           {activeTab === 'tower' && (
             <TowerScreen 
