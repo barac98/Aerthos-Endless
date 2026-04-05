@@ -56,6 +56,11 @@ export const Card: React.FC<CardProps> = ({
     setIsFlipped(!isFlipped);
   };
 
+  const levelMult = 1 + (level - 1) * 0.1;
+  const scaledAtk = paragon.baseAtk * levelMult;
+  const scaledSpeed = paragon.atkSpeed * levelMult;
+  const scaledCrit = paragon.critChance * levelMult;
+  
   if (variant === 'small') {
     return (
       <div className="relative w-20 sm:w-28 aspect-[2/3] perspective-1000 group cursor-pointer" style={{ touchAction: 'manipulation' }}>
@@ -126,11 +131,17 @@ export const Card: React.FC<CardProps> = ({
               <div className="space-y-0.5 font-runic text-[6px]">
                 <div className="flex justify-between border-b border-white/5">
                   <span className="text-white/50">ATK</span>
-                  <span className="text-white">{paragon.baseAtk}</span>
+                  <div className="flex items-center gap-0.5">
+                    <span className={level > 1 ? "text-green-400" : "text-white"}>{Math.floor(scaledAtk)}</span>
+                    {level > 1 && <span className="text-green-400 text-[4px]">+</span>}
+                  </div>
                 </div>
                 <div className="flex justify-between border-b border-white/5">
                   <span className="text-white/50">SPD</span>
-                  <span className="text-white">{paragon.atkSpeed}</span>
+                  <div className="flex items-center gap-0.5">
+                    <span className={level > 1 ? "text-green-400" : "text-white"}>{scaledSpeed.toFixed(1)}</span>
+                    {level > 1 && <span className="text-green-400 text-[4px]">+</span>}
+                  </div>
                 </div>
               </div>
               <div className="mt-1">
@@ -256,15 +267,24 @@ export const Card: React.FC<CardProps> = ({
           <div className="space-y-0.5 sm:space-y-3 font-runic text-[9px] sm:text-sm">
             <div className="flex justify-between border-b border-white/5 pb-0.5 sm:pb-1">
               <span className="text-white/50">ATK</span>
-              <span className="text-white">{paragon.baseAtk}</span>
+              <div className="flex items-center gap-1">
+                <span className={level > 1 ? "text-green-400" : "text-white"}>{Math.floor(scaledAtk)}</span>
+                {level > 1 && <span className="text-green-400 text-[8px]">+</span>}
+              </div>
             </div>
             <div className="flex justify-between border-b border-white/5 pb-0.5 sm:pb-1">
               <span className="text-white/50">SPD</span>
-              <span className="text-white">{paragon.atkSpeed}x</span>
+              <div className="flex items-center gap-1">
+                <span className={level > 1 ? "text-green-400" : "text-white"}>{scaledSpeed.toFixed(1)}x</span>
+                {level > 1 && <span className="text-green-400 text-[8px]">+</span>}
+              </div>
             </div>
             <div className="flex justify-between border-b border-white/5 pb-0.5 sm:pb-1">
               <span className="text-white/50">CRIT</span>
-              <span className="text-white">{(paragon.critChance * 100).toFixed(0)}%</span>
+              <div className="flex items-center gap-1">
+                <span className={level > 1 ? "text-green-400" : "text-white"}>{(scaledCrit * 100).toFixed(0)}%</span>
+                {level > 1 && <span className="text-green-400 text-[8px]">+</span>}
+              </div>
             </div>
           </div>
 

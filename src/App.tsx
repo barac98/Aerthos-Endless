@@ -118,7 +118,8 @@ export default function App() {
 
       team.forEach(p => {
         const owned = state.ownedParagons.find(op => op.id === p.id);
-        const levelMult = owned ? 1 + (owned.level - 1) * 0.1 : 1;
+        const level = owned?.level || 1;
+        const levelMult = 1 + (level - 1) * 0.1;
         
         // New Multipliers
         const temporalAtkMult = 1 + state.temporalUpgrades.atk * 0.1;
@@ -128,14 +129,15 @@ export default function App() {
         const temporalCritMult = state.temporalUpgrades.crit * 0.01;
         const permanentCritMult = state.permanentUpgrades.critRate * 0.01;
         
+        // Final Damage = (Hero Base * Level Multiplier) * (Battle Training Multiplier) * (Runic Altar Multiplier)
         let dmg = p.baseAtk * levelMult * temporalAtkMult * permanentAtkMult * soulChainMult;
         
         // Simple ability logic
         if (p.id === 'kaelen-bold') dmg *= (1 + state.currentFloor * 0.05);
         if (p.id === 'oghul') dmg *= 1.2;
 
-        const effectiveAtkSpeed = p.atkSpeed * temporalSpeedMult * permanentSpeedMult;
-        const totalCrit = p.critChance + temporalCritMult + permanentCritMult;
+        const effectiveAtkSpeed = p.atkSpeed * levelMult * temporalSpeedMult * permanentSpeedMult;
+        const totalCrit = (p.critChance * levelMult) + temporalCritMult + permanentCritMult;
         
         // Calculate DPS for display
         const critDmgMult = 1 + totalCrit;
