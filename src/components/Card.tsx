@@ -58,7 +58,7 @@ export const Card: React.FC<CardProps> = ({
 
   if (variant === 'small') {
     return (
-      <div className="relative w-14 sm:w-20 aspect-[2/3] perspective-1000 group cursor-pointer">
+      <div className="relative w-20 sm:w-28 aspect-[2/3] perspective-1000 group cursor-pointer">
         <motion.div
           className="relative w-full h-full transition-all duration-500 preserve-3d"
           animate={{ 

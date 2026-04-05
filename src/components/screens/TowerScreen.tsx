@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sword, Shield, Sparkles, Coins } from 'lucide-react';
+import { Sword, Shield, Sparkles, Coins, Clock, Zap, Play, Pause } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { Card } from '../Card';
 import { INITIAL_PARAGONS } from '../../types';
@@ -85,7 +85,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
       }}
       exit={{ opacity: 0, x: -100 }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="h-full w-full relative flex flex-col items-center justify-center overflow-hidden"
+      className="h-screen w-full relative flex flex-col items-center justify-between overflow-hidden select-none"
     >
       {/* Background Image - Covers entire viewport */}
       <div 
@@ -150,99 +150,211 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <div className="w-full h-full flex flex-col items-center justify-start p-2 md:p-4 gap-4 md:gap-6 relative z-10 pt-2">
+      <div className="w-full h-full flex flex-col items-center justify-between p-1 md:p-2 gap-1 relative z-10">
         
-        {/* Floor & Biome Info (Top) */}
-        <div className="flex flex-col items-center gap-0.5 mb-2">
-          <div className="text-[10px] md:text-xs uppercase tracking-[0.3em] text-white/40 font-bold">Floor {store.currentFloor}</div>
-          <div className="text-sm md:text-lg uppercase tracking-[0.2em] text-luminary font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.5)]">{currentBiome.name}</div>
-        </div>
-
-        {/* Combat Dashboard */}
-        <div className="w-full max-w-xs md:max-w-md flex flex-col gap-2">
-          <div className="flex items-center justify-between bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl">
-            {/* Timer (Left) */}
-            <div className="flex flex-col items-start">
-              <span className="text-[8px] uppercase tracking-widest text-white/40">Time Remaining</span>
-              <div className={`text-xl md:text-2xl font-runic font-bold drop-shadow-[0_0_8px_rgba(0,255,255,0.5)] ${floorTimer < 10 ? 'text-red-500 animate-pulse' : 'text-luminary'}`}>
+        {/* Combat HUD (Top) */}
+        <div className="w-full max-w-2xl flex items-center justify-center relative px-2 py-0.5">
+          {/* HUD Center: Timer, Speed, Auto */}
+          <div className="flex items-center justify-around gap-6 md:gap-12 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl px-8 py-1.5 shadow-2xl">
+            {/* Timer */}
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-luminary/60" />
+              <div className={`text-xl md:text-2xl font-runic font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.6)] ${floorTimer < 10 ? 'text-red-500 animate-pulse' : 'text-luminary'}`}>
                 {floorTimer.toFixed(1)}s
               </div>
             </div>
 
-            {/* Speed & Auto (Right) */}
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const nextSpeed = gameSpeed === 1 ? 2 : gameSpeed === 2 ? 4 : 1;
-                    onSetGameSpeed(nextSpeed);
-                  }}
-                  className="px-3 py-1 bg-black/40 rounded-lg border border-white/10 text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-white/10 active:scale-95 shadow-[0_0_15px_rgba(0,255,255,0.1)]"
-                >
-                  x{gameSpeed}
-                </button>
-                <button 
-                  onClick={() => store.toggleAutoProgress()}
-                  className={`px-3 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-all ${
-                    store.autoProgress 
-                      ? 'border-luminary text-luminary bg-luminary/20 glow-cyan' 
-                      : 'border-white/20 text-white/60 bg-white/5 hover:border-white/40'
-                  }`}
-                >
-                  Auto
-                </button>
+            {/* Speed Toggle */}
+            <button
+              onClick={() => {
+                const nextSpeed = gameSpeed === 1 ? 2 : gameSpeed === 2 ? 4 : 1;
+                onSetGameSpeed(nextSpeed);
+              }}
+              className="flex items-center gap-2 group px-2"
+            >
+              <Zap className={`w-4 h-4 transition-colors ${gameSpeed > 1 ? 'text-luminary' : 'text-white/40'} group-hover:text-luminary`} />
+              <div className="text-base md:text-xl font-bold text-white group-hover:text-luminary transition-colors">x{gameSpeed}</div>
+            </button>
+
+            {/* Auto Toggle */}
+            <button 
+              onClick={() => store.toggleAutoProgress()}
+              className="flex items-center gap-2 group px-2"
+            >
+              {store.autoProgress ? (
+                <Play className="w-4 h-4 text-luminary shadow-[0_0_10px_rgba(0,255,255,0.5)]" />
+              ) : (
+                <Pause className="w-4 h-4 text-white/40" />
+              )}
+              <div className={`text-base md:text-xl font-bold transition-colors ${store.autoProgress ? 'text-luminary glow-cyan' : 'text-white/40'}`}>
+                AUTO
               </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => store.descendFloor()}
-                  disabled={store.currentFloor <= 1}
-                  className={`p-1 rounded-md border transition-all ${
-                    store.currentFloor > 1 
-                      ? 'border-white/20 text-white/80 hover:border-luminary hover:text-luminary bg-white/5' 
-                      : 'border-white/5 text-white/10 cursor-not-allowed bg-transparent'
-                  }`}
-                >
-                  <Sword className="w-3 h-3 rotate-180" />
-                </button>
-                <button 
-                  onClick={() => store.climbFloor()}
-                  disabled={store.currentFloor >= store.highestFloor}
-                  className={`p-1 rounded-md border transition-all ${
-                    store.currentFloor < store.highestFloor 
-                      ? 'border-white/20 text-white/80 hover:border-luminary hover:text-luminary bg-white/5' 
-                      : 'border-white/5 text-white/10 cursor-not-allowed bg-transparent'
-                  }`}
-                >
-                  <Sword className="w-3 h-3" />
-                </button>
+            </button>
+          </div>
+        </div>
+
+        {/* Monster Section (Middle - Limited to 35vh) */}
+        <div className="flex-1 w-full flex flex-col items-center justify-center relative min-h-0">
+          {/* Navigation Paddles - Anchored to Monster Area */}
+          <button 
+            onClick={() => store.descendFloor()}
+            disabled={store.currentFloor <= 1}
+            className={`absolute left-0 top-1/2 -translate-y-1/2 w-[50px] h-[100px] flex items-center justify-center transition-all z-[100] ${
+              store.currentFloor > 1 
+                ? 'opacity-30 hover:opacity-80 active:opacity-80 cursor-pointer' 
+                : 'opacity-0 cursor-not-allowed pointer-events-none'
+            }`}
+          >
+            <div className="w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-md border-r border-y border-luminary/30 rounded-r-xl shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+              <Sword className="w-5 h-5 rotate-180 text-luminary" />
+            </div>
+          </button>
+
+          <button 
+            onClick={() => store.climbFloor()}
+            disabled={store.currentFloor >= store.highestFloor}
+            className={`absolute right-0 top-1/2 -translate-y-1/2 w-[50px] h-[100px] flex items-center justify-center transition-all z-[100] ${
+              store.currentFloor < store.highestFloor 
+                ? 'opacity-30 hover:opacity-80 active:opacity-80 cursor-pointer' 
+                : 'opacity-0 cursor-not-allowed pointer-events-none'
+            }`}
+          >
+            <div className="w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-md border-l border-y border-luminary/30 rounded-l-xl shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+              <Sword className="w-5 h-5 text-luminary" />
+            </div>
+          </button>
+
+          <div className="relative flex flex-col items-center w-full max-w-3xl h-full justify-center min-h-0">
+            {/* Reward Popups */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full h-10 flex items-center justify-center z-30 pointer-events-none">
+              <AnimatePresence>
+                {rewardPopups.map((reward) => (
+                  <motion.div
+                    key={reward.id}
+                    initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                    animate={{ opacity: 1, y: -5 }}
+                    exit={{ opacity: 0, scale: 1.5, y: -25 }}
+                    className="absolute flex flex-col items-center gap-0 pointer-events-none bg-black/90 backdrop-blur-2xl p-1.5 rounded-lg border border-luminary/40 shadow-[0_0_20px_rgba(0,255,255,0.3)]"
+                  >
+                    <div className="flex items-center gap-1 text-yellow-400 font-bold text-[10px]">
+                      <Coins className="w-3 h-3" />
+                      <span>+{reward.gold.toLocaleString()}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            {/* Monster Sprite */}
+            <div className="w-full h-[35vh] relative flex items-center justify-center min-h-0">
+              <div className="absolute inset-0 bg-shadow-magic/5 blur-[80px] rounded-full animate-pulse" />
+              <motion.img 
+                key={`enemy-${store.currentFloor}`}
+                initial={{ x: 0, filter: 'contrast(1.2) brightness(0.9) drop-shadow(0 0 10px rgba(0,0,0,0.5))' }}
+                animate={lastHitTime ? { 
+                  x: [0, -5, 5, -5, 5, 0],
+                  filter: ['contrast(1.2) brightness(0.9) drop-shadow(0 0 10px rgba(0,0,0,0.5))', 'contrast(1.5) brightness(1.2) drop-shadow(0 0 20px rgba(0,255,255,0.5))', 'contrast(1.2) brightness(0.9) drop-shadow(0 0 10px rgba(0,0,0,0.5))']
+                } : {}}
+                transition={{ duration: 0.2 }}
+                src={enemyImageUrl} 
+                alt="Enemy"
+                className="w-full h-full object-contain relative z-10 enemy-image mix-blend-screen"
+                referrerPolicy="no-referrer"
+              />
+              
+              {/* Floating Damage Numbers */}
+              <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
+                <AnimatePresence>
+                  {damageNumbers.map((dmg) => (
+                    <motion.span
+                      key={dmg.id}
+                      initial={{ opacity: 1, y: 0, scale: 0.5, x: (Math.random() - 0.5) * 40 }}
+                      animate={{ opacity: 0, y: -150, scale: 1.8, x: (Math.random() - 0.5) * 80 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                      className="absolute text-3xl md:text-5xl font-bold font-runic"
+                      style={{ 
+                        color: dmg.color,
+                        textShadow: `0 0 10px ${dmg.color}CC, 0 0 20px ${dmg.color}60`
+                      }}
+                    >
+                      {dmg.isCrit && <span className="block text-[10px] md:text-[12px] uppercase tracking-tighter mb-[-8px] text-white">Crit!</span>}
+                      -{dmg.value}
+                    </motion.span>
+                  ))}
+
+                  {activeAbilities.map((ability) => (
+                    <motion.div
+                      key={ability.id}
+                      initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                      animate={{ opacity: 1, y: -80, scale: 1.2 }}
+                      exit={{ opacity: 0, scale: 1.4 }}
+                      className="absolute whitespace-nowrap font-bold tracking-[0.3em] text-lg md:text-3xl italic font-runic"
+                      style={{ 
+                        color: ability.color,
+                        textShadow: `0 0 20px ${ability.color}`
+                      }}
+                    >
+                      {ability.name}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+            
+            {/* HP Bar */}
+            <div className="w-full max-w-md flex flex-col items-center gap-1 mt-2">
+              <div className="w-full h-1.5 md:h-2 bg-black/60 rounded-full overflow-hidden border border-white/5 shadow-[inset_0_1px_4px_rgba(0,0,0,0.8)]">
+                <motion.div 
+                  className="h-full bg-gradient-to-r from-red-900 via-red-600 to-luminary shadow-[0_0_10px_rgba(0,255,255,0.4)]"
+                  initial={{ width: '100%' }}
+                  animate={{ width: `${(enemyHp / maxEnemyHp) * 100}%` }}
+                />
+              </div>
+              <div className="flex justify-between w-full px-1 text-[8px] md:text-[9px] font-runic uppercase tracking-[0.2em]">
+                <span className="text-white/30">Enemy Vitality</span>
+                <span className="text-luminary/80 font-bold">
+                  {Math.ceil(enemyHp).toLocaleString()} / {maxEnemyHp.toLocaleString()}
+                </span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="w-full flex flex-col md:flex-row items-center justify-center gap-4 md:gap-12 relative">
-          
-          {/* Team Section (Left on Desktop, Bottom on Mobile) */}
-          <div className="w-full md:w-auto flex flex-col items-center md:items-start gap-1 md:gap-2 order-2 md:order-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-[7px] md:text-[10px] font-bold text-luminary uppercase tracking-[0.3em] opacity-50">Active Team</h2>
-              <div className="h-px w-6 md:w-10 bg-luminary/20" />
-              <span className="text-[7px] md:text-[8px] text-white/30 uppercase tracking-widest">Soul Chain: +{((store.activeTeam.filter(id => id !== null).length - 1) * 10)}%</span>
+        {/* Team Section (Bottom - Roughly 20vh) */}
+        <div className="w-full flex flex-col items-center gap-2 pb-1 min-h-0">
+          <div className="flex flex-col items-center gap-2 w-full min-h-0">
+            <div className="flex items-center justify-between w-full max-w-4xl px-4 relative">
+              <div className="flex items-center gap-3">
+                <h2 className="text-[8px] md:text-[10px] font-bold text-shadow-magic uppercase tracking-[0.5em] opacity-90">The Soul Chain</h2>
+                <div className="h-px w-8 md:w-16 bg-shadow-magic/30" />
+              </div>
+              
+              {/* Floating DPS Pill */}
+              <div className="absolute -top-6 left-4 flex items-center gap-1.5 px-2.5 py-0.5 bg-black/60 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl z-20">
+                <Sword className="w-2 h-2 text-red-500 animate-pulse" />
+                <div className="flex items-baseline gap-1">
+                  <span className="text-[7px] uppercase tracking-[0.1em] text-white/40">DPS:</span>
+                  <span className="text-xs font-runic text-white font-bold">
+                    {Math.floor(totalDps).toLocaleString()}
+                  </span>
+                </div>
+              </div>
             </div>
             
-            <div className="flex flex-row gap-1.5 md:gap-3">
+            <div className="flex flex-row gap-2 md:gap-4 h-[20vh] min-h-0 items-center">
               {activeParagons.map((p, index) => {
                 if (!p) {
                   return (
-                    <div key={`empty-${index}`} className="w-14 sm:w-18 md:w-24 aspect-[2/3] obsidian-border rounded-lg bg-black/20 flex items-center justify-center border-dashed border-luminary/30 shadow-[0_0_10px_rgba(0,255,255,0.1)]">
-                      <span className="text-[5px] md:text-[7px] text-luminary/20 uppercase tracking-widest text-center px-1">Empty Slot</span>
+                    <div key={`empty-${index}`} className="w-16 sm:w-24 md:w-32 h-full obsidian-border rounded-xl bg-black/20 flex items-center justify-center border-dashed border-luminary/30 shadow-[0_0_15px_rgba(0,255,255,0.05)]">
+                      <span className="text-[8px] md:text-[10px] text-luminary/20 uppercase tracking-widest text-center px-1">Vacant</span>
                     </div>
                   );
                 }
                 const ownedData = store.ownedParagons.find(op => op.id === p.id);
                 return (
-                  <div key={p.id} className="flex flex-col items-center gap-0.5 group">
-                    <div className="relative">
+                  <div key={p.id} className="flex flex-col items-center gap-1 group h-full min-h-0">
+                    <div className="relative h-[85%] aspect-[2/3]">
                       <Card 
                         paragon={p} 
                         variant="small" 
@@ -256,8 +368,8 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                       />
                     </div>
                     <div className="flex items-center gap-1">
-                      <div className="w-1 h-1 rounded-full shadow-[0_0_5px_currentColor]" style={{ backgroundColor: p.color, color: p.color }} />
-                      <span className="text-[5px] md:text-[7px] uppercase tracking-widest font-bold text-white/70 group-hover:text-white transition-colors">{p.name}</span>
+                      <div className="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: p.color, color: p.color }} />
+                      <span className="text-[8px] md:text-[9px] uppercase tracking-widest font-bold text-white/70 group-hover:text-white transition-colors truncate max-w-[60px] md:max-w-none">{p.name}</span>
                     </div>
                   </div>
                 );
@@ -265,122 +377,12 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
             </div>
           </div>
 
-          {/* Monster Section (Right on Desktop, Top on Mobile) */}
-          <div className="w-full md:w-auto flex flex-col items-center gap-4 md:gap-6 order-1 md:order-2">
-            <div className="relative flex flex-col items-center w-full">
-              {/* Reward Popups - Floating over monster */}
-              <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-full h-12 flex items-center justify-center z-30 pointer-events-none">
-                <AnimatePresence>
-                  {rewardPopups.map((reward) => (
-                    <motion.div
-                      key={reward.id}
-                      initial={{ opacity: 0, y: 15, scale: 0.8 }}
-                      animate={{ opacity: 1, y: -5 }}
-                      exit={{ opacity: 0, scale: 1.5, y: -30 }}
-                      className="absolute flex flex-col items-center gap-0 pointer-events-none bg-black/80 backdrop-blur-xl p-1.5 md:p-2 rounded-lg border border-luminary/30 shadow-[0_0_20px_rgba(0,255,255,0.2)]"
-                    >
-                      <div className="flex items-center gap-1 text-yellow-400 font-bold text-[9px] md:text-xs">
-                        <Coins className="w-2.5 h-2.5" />
-                        <span>+{reward.gold.toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-luminary font-bold text-[8px] md:text-[10px]">
-                        <Sparkles className="w-2.5 h-2.5" />
-                        <span>+{reward.xp} XP</span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-
-              <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-72 md:h-72 relative mb-1 md:mb-2">
-                <div className="absolute inset-0 bg-shadow-magic/10 blur-[60px] rounded-full animate-pulse" />
-                <motion.img 
-                  key={`enemy-${store.currentFloor}`}
-                  initial={{ x: 0, filter: 'contrast(1.1) brightness(0.9)' }}
-                  animate={lastHitTime ? { 
-                    x: [0, -5, 5, -5, 5, 0],
-                    filter: ['contrast(1.1) brightness(0.9)', 'contrast(1.5) brightness(1.2)', 'contrast(1.1) brightness(0.9)']
-                  } : {}}
-                  transition={{ duration: 0.2 }}
-                  src={enemyImageUrl} 
-                  alt="Enemy"
-                  className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_30px_rgba(138,43,226,0.3)] enemy-image mix-blend-multiply"
-                  referrerPolicy="no-referrer"
-                />
-                
-                {/* Floating Damage Numbers */}
-                <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
-                  <AnimatePresence>
-                    {damageNumbers.map((dmg) => (
-                      <motion.span
-                        key={dmg.id}
-                        initial={{ opacity: 1, y: 0, scale: 0.5, x: (Math.random() - 0.5) * 30 }}
-                        animate={{ opacity: 0, y: -100, scale: 1.4, x: (Math.random() - 0.5) * 60 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.7, ease: "easeOut" }}
-                        className="absolute text-lg md:text-3xl font-bold font-runic"
-                        style={{ 
-                          color: dmg.color,
-                          textShadow: `0 0 8px ${dmg.color}CC, 0 0 15px ${dmg.color}60`
-                        }}
-                      >
-                        {dmg.isCrit && <span className="block text-[7px] md:text-[9px] uppercase tracking-tighter mb-[-5px] text-white">Crit!</span>}
-                        -{dmg.value}
-                      </motion.span>
-                    ))}
-
-                    {activeAbilities.map((ability) => (
-                      <motion.div
-                        key={ability.id}
-                        initial={{ opacity: 0, y: 25, scale: 0.8 }}
-                        animate={{ opacity: 1, y: -50, scale: 1.1 }}
-                        exit={{ opacity: 0, scale: 1.3 }}
-                        className="absolute whitespace-nowrap font-bold tracking-[0.2em] text-xs md:text-2xl italic font-runic"
-                        style={{ 
-                          color: ability.color,
-                          textShadow: `0 0 15px ${ability.color}`
-                        }}
-                      >
-                        {ability.name}
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </div>
-              
-              {/* HP Bar */}
-              <div className="w-full max-w-[200px] md:max-w-[320px] flex flex-col items-center gap-0.5 md:gap-1">
-                <div className="w-full h-1.5 md:h-2.5 bg-black/40 rounded-full overflow-hidden border border-white/10 shadow-inner">
-                  <motion.div 
-                    className="h-full bg-gradient-to-r from-shadow-magic via-red-500 to-red-600 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
-                    initial={{ width: '100%' }}
-                    animate={{ width: `${(enemyHp / maxEnemyHp) * 100}%` }}
-                  />
-                </div>
-                <div className="flex justify-between w-full px-1">
-                  <span className="text-[7px] md:text-[8px] font-runic text-white/40 uppercase tracking-widest">Enemy HP</span>
-                  <span className="text-[7px] md:text-[8px] font-runic text-white/80 font-bold tracking-widest">
-                    {Math.ceil(enemyHp).toLocaleString()} / {maxEnemyHp.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              {/* DPS Display */}
-              <motion.div 
-                key={totalDps}
-                initial={{ scale: 1 }}
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 0.3 }}
-                className="mt-2 md:mt-4 flex items-center gap-2 md:gap-3 px-3 md:px-5 py-1 md:py-1.5 bg-black/40 backdrop-blur-md rounded-lg border border-white/10 shadow-xl"
-              >
-                <Sword className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-red-500 animate-pulse" />
-                <div className="flex flex-col">
-                  <span className="text-[6px] md:text-[7px] uppercase tracking-[0.2em] text-white/40">Total Team DPS</span>
-                  <span className="text-[10px] md:text-sm font-runic text-white font-bold tracking-wider">
-                    {Math.floor(totalDps).toLocaleString()}
-                  </span>
-                </div>
-              </motion.div>
+          {/* Status Footer (Floor & Biome) - Anchored at the very bottom */}
+          <div className="w-full flex items-center justify-center py-2 mt-1 border-t border-white/5 bg-black/20 backdrop-blur-sm">
+            <div className="flex items-center gap-6">
+              <div className="text-xs md:text-sm uppercase tracking-[0.4em] text-white/40 font-runic">Floor {store.currentFloor}</div>
+              <div className="w-1.5 h-1.5 rounded-full bg-luminary/20" />
+              <div className="text-xs md:text-sm uppercase tracking-[0.3em] text-luminary font-runic drop-shadow-[0_0_8px_rgba(0,255,255,0.4)]">{currentBiome.name}</div>
             </div>
           </div>
         </div>
