@@ -19,6 +19,7 @@ interface CardProps {
   onAscend?: () => void;
   biomeColor?: string;
   onClick?: () => void;
+  gameSpeed?: number;
 }
 
 export const Card: React.FC<CardProps> = ({ 
@@ -36,7 +37,8 @@ export const Card: React.FC<CardProps> = ({
   soulShards = 0,
   onAscend,
   biomeColor = '#00FFFF',
-  onClick
+  onClick,
+  gameSpeed = 1
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -55,7 +57,7 @@ export const Card: React.FC<CardProps> = ({
     if (isActive && lastHitTime) {
       controls.start({
         y: [0, -10, 0],
-        transition: { duration: 0.2 }
+        transition: { duration: 0.2 / gameSpeed }
       });
     }
   }, [lastHitTime, isActive, controls]);

@@ -12,10 +12,10 @@ interface TowerScreenProps {
   totalDps: number;
   lastHitTime: number;
   lastAttackTimes: Record<string, number>;
-  damageNumbers: { id: number; value: number; color: string; isCrit?: boolean }[];
+  damageNumbers: { id: string | number; value: number; color: string; isCrit?: boolean }[];
   enemyImageUrl: string;
   paragonMp: Record<string, number>;
-  activeAbilities: { id: number; name: string; color: string }[];
+  activeAbilities: { id: string | number; name: string; color: string }[];
   floorTimer: number;
   screenEffect: { type: 'flash' | 'shake'; color: string } | null;
   gameSpeed: number;
@@ -62,7 +62,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
       setRewardPopups(prev => [...prev.slice(-5), newReward]);
       const timer = setTimeout(() => {
         setRewardPopups(prev => prev.filter(r => r.id !== newReward.id));
-      }, 1500);
+      }, 1500 / gameSpeed);
       return () => clearTimeout(timer);
     }
   }, [store.lastEnemyRewards?.timestamp]);
@@ -72,7 +72,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
     if (store.bossDropSuccess !== null) {
       const timer = setTimeout(() => {
         store.resetBossDropFlag();
-      }, 4000);
+      }, 4000 / gameSpeed);
       return () => clearTimeout(timer);
     }
   }, [store.bossDropSuccess]);
@@ -86,7 +86,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
         x: screenEffect?.type === 'shake' ? [0, -10, 10, -10, 10, 0] : 0
       }}
       exit={{ opacity: 0, x: -100 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+      transition={screenEffect?.type === 'shake' ? { duration: 0.5 / gameSpeed } : { type: 'spring', damping: 25, stiffness: 200 }}
       className="h-full w-full relative flex flex-col items-center justify-between overflow-hidden select-none"
     >
       {/* Background Image - Covers entire viewport */}
@@ -173,10 +173,10 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                 const nextSpeed = gameSpeed === 1 ? 2 : gameSpeed === 2 ? 4 : 1;
                 onSetGameSpeed(nextSpeed);
               }}
-              className="flex items-center gap-1.5 group"
+              className={`flex items-center gap-1.5 group px-2 py-0.5 rounded transition-all ${gameSpeed > 1 ? 'bg-luminary/10 border border-luminary/30 shadow-[0_0_10px_rgba(0,255,255,0.2)]' : ''}`}
             >
               <Zap className={`w-3.5 h-3.5 transition-colors ${gameSpeed > 1 ? 'text-luminary' : 'text-white/40'} group-hover:text-luminary`} />
-              <div className="text-sm md:text-base font-bold text-white group-hover:text-luminary transition-colors">x{gameSpeed}</div>
+              <div className={`text-sm md:text-base font-bold transition-colors ${gameSpeed > 1 ? 'text-luminary glow-cyan' : 'text-white group-hover:text-luminary'}`}>x{gameSpeed}</div>
             </button>
 
             <div className="w-px h-4 bg-white/10" />
@@ -240,6 +240,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                     animate={{ opacity: 1, y: -5 }}
                     exit={{ opacity: 0, scale: 1.5, y: -20 }}
                     className="absolute flex flex-col items-center gap-0 pointer-events-none bg-black/90 backdrop-blur-2xl p-1 rounded-lg border border-luminary/40 shadow-[0_0_20px_rgba(0,255,255,0.3)]"
+                    style={{ willChange: 'transform, opacity' }}
                   >
                     <div className="flex items-center gap-1 text-yellow-400 font-bold text-[9px]">
                       <Coins className="w-2.5 h-2.5" />
@@ -258,12 +259,13 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                 initial={{ x: 0, filter: 'contrast(1.2) brightness(0.9) drop-shadow(0 0 10px rgba(0,0,0,0.5))' }}
                 animate={lastHitTime ? { 
                   x: [0, -5, 5, -5, 5, 0],
-                  filter: ['contrast(1.2) brightness(0.9) drop-shadow(0 0 10px rgba(0,0,0,0.5))', 'contrast(1.5) brightness(1.2) drop-shadow(0 0 20px rgba(0,255,255,0.5))', 'contrast(1.2) brightness(0.9) drop-shadow(0 0 10px rgba(0,0,0,0.5))']
+                  filter: gameSpeed >= 4 ? 'none' : ['contrast(1.2) brightness(0.9) drop-shadow(0 0 10px rgba(0,0,0,0.5))', 'contrast(1.5) brightness(1.2) drop-shadow(0 0 20px rgba(0,255,255,0.5))', 'contrast(1.2) brightness(0.9) drop-shadow(0 0 10px rgba(0,0,0,0.5))']
                 } : {}}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.2 / gameSpeed }}
                 src={enemyImageUrl} 
                 alt="Enemy"
                 className="w-full h-full object-contain relative z-10 enemy-image mix-blend-screen"
+                style={{ willChange: 'transform, filter' }}
                 referrerPolicy="no-referrer"
               />
               
@@ -276,11 +278,13 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                       initial={{ opacity: 1, y: 0, scale: 0.5, x: (Math.random() - 0.5) * 30 }}
                       animate={{ opacity: 0, y: -120, scale: 1.6, x: (Math.random() - 0.5) * 60 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.8, ease: "easeOut" }}
+                      transition={{ duration: 0.8 / gameSpeed, ease: "easeOut" }}
                       className="absolute text-2xl md:text-4xl font-bold font-runic"
                       style={{ 
                         color: dmg.color,
-                        textShadow: `0 0 8px ${dmg.color}CC, 0 0 16px ${dmg.color}60`
+                        textShadow: gameSpeed >= 4 ? 'none' : `0 0 8px ${dmg.color}CC, 0 0 16px ${dmg.color}60`,
+                        transform: 'translate3d(0,0,0)',
+                        willChange: 'transform, opacity'
                       }}
                     >
                       {dmg.isCrit && <span className="block text-[9px] md:text-[11px] uppercase tracking-tighter mb-[-6px] text-white">Crit!</span>}
@@ -297,7 +301,8 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                       className="absolute whitespace-nowrap font-bold tracking-[0.2em] text-base md:text-2xl italic font-runic"
                       style={{ 
                         color: ability.color,
-                        textShadow: `0 0 15px ${ability.color}`
+                        textShadow: gameSpeed >= 4 ? 'none' : `0 0 15px ${ability.color}`,
+                        willChange: 'transform, opacity'
                       }}
                     >
                       {ability.name}
@@ -373,6 +378,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                         nextLevelXp={ownedData?.nextLevelXp}
                         starRating={ownedData?.starRating}
                         biomeColor={currentBiome.color}
+                        gameSpeed={gameSpeed}
                         onClick={() => onSelectParagon(p.id)}
                       />
                     </div>

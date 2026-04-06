@@ -33,12 +33,12 @@ export default function App() {
   const [lastHitTime, setLastHitTime] = useState(0);
   const lastHitTimeRef = useRef(0);
   const [lastAttackTimes, setLastAttackTimes] = useState<Record<string, number>>({});
-  const [damageNumbers, setDamageNumbers] = useState<{ id: number; value: number; color: string; isCrit?: boolean }[]>([]);
+  const [damageNumbers, setDamageNumbers] = useState<{ id: string | number; value: number; color: string; isCrit?: boolean }[]>([]);
   const attackTimersRef = useRef<Record<string, number>>({});
 
   // Signature Ability State
   const [paragonMp, setParagonMp] = useState<Record<string, number>>({});
-  const [activeAbilities, setActiveAbilities] = useState<{ id: number; name: string; color: string }[]>([]);
+  const [activeAbilities, setActiveAbilities] = useState<{ id: string | number; name: string; color: string }[]>([]);
   const [goldBonusTimer, setGoldBonusTimer] = useState(0);
   const [floorTimer, setFloorTimer] = useState(60);
   const [isTimerPaused, setIsTimerPaused] = useState(false);
@@ -50,6 +50,12 @@ export default function App() {
   const [selectedParagonId, setSelectedParagonId] = useState<string | null>(null);
 
   const isTransitioningRef = useRef(false);
+  const internalStateRef = useRef({
+    enemyHp: 100,
+    floorTimer: 60,
+    paragonMp: {} as Record<string, number>,
+    goldBonusTimer: 0
+  });
 
   const enemyImageUrl = useMemo(() => {
     const monsterTypes = ['demon', 'wraith', 'golem', 'dragon', 'beholder', 'skeleton', 'gargoyle', 'chimera', 'hydra', 'lich'];
@@ -64,6 +70,12 @@ export default function App() {
     setEnemyHp(nextMaxHp);
     setFloorTimer(60);
     setParagonMp({}); // Reset MP on floor change as requested
+    
+    // Sync internal state
+    internalStateRef.current.enemyHp = nextMaxHp;
+    internalStateRef.current.floorTimer = 60;
+    internalStateRef.current.paragonMp = {};
+    
     isTransitioningRef.current = false; // Unlock after HP is set
   }, [store.currentFloor]);
 
@@ -85,36 +97,33 @@ export default function App() {
       hasCheckedOfflineRef.current = true;
     }
 
-    const TICK_RATE = 100; // 100ms for smoother combat
+    const TICK_RATE = 33; // ~30fps for accurate math
+    let lastUiUpdate = 0;
+    
     const interval = setInterval(() => {
       const state = useGameStore.getState();
+      const now = Date.now();
+      const deltaTime = TICK_RATE / 1000;
       
       // Update Floor Timer
-      setFloorTimer(prev => {
-        if (isTimerPaused) return prev;
-        const next = prev - (TICK_RATE / 1000) * state.gameSpeed;
-        if (next <= 0) {
-          // Timer hit 0 - Reset floor progress
-          setEnemyHp(maxEnemyHp);
-          return 60;
+      if (!isTimerPaused) {
+        internalStateRef.current.floorTimer -= deltaTime * state.gameSpeed;
+        if (internalStateRef.current.floorTimer <= 0) {
+          internalStateRef.current.enemyHp = maxEnemyHp;
+          internalStateRef.current.floorTimer = 60;
         }
-        return next;
-      });
+      }
 
       // Update Gold Bonus Timer
-      setGoldBonusTimer(prev => Math.max(0, prev - (TICK_RATE / 1000) * state.gameSpeed));
+      internalStateRef.current.goldBonusTimer = Math.max(0, internalStateRef.current.goldBonusTimer - deltaTime * state.gameSpeed);
 
       const activeIds = state.activeTeam.filter((id): id is string => id !== null);
-      
-      // Soul Chain: +10% ATK per additional member (2 members = 10%, 3 = 20%, 4 = 30%)
       const soulChainMult = 1 + (activeIds.length - 1) * 0.1;
-
-      // Explicitly find team members to avoid any filter issues
       const team = activeIds.map(id => INITIAL_PARAGONS.find(p => p.id === id)).filter((p): p is typeof INITIAL_PARAGONS[0] => !!p);
       
       let totalDamageThisTick = 0;
       let currentTotalDps = 0;
-      const newDamageNumbers: { id: number; value: number; color: string; isCrit?: boolean }[] = [];
+      const newDamageNumbers: { id: string | number; value: number; color: string; isCrit?: boolean }[] = [];
       const attackingIds: string[] = [];
       const triggeredAbilities: { name: string; color: string; damage?: number }[] = [];
 
@@ -123,7 +132,6 @@ export default function App() {
         const level = owned?.level || 1;
         const levelMult = 1 + (level - 1) * 0.1;
         
-        // New Multipliers
         const temporalAtkMult = 1 + state.temporalUpgrades.atk * 0.1;
         const permanentAtkMult = 1 + state.permanentUpgrades.atkMult * 0.1;
         const temporalSpeedMult = 1 + state.temporalUpgrades.speed * 0.05;
@@ -131,31 +139,24 @@ export default function App() {
         const temporalCritMult = state.temporalUpgrades.crit * 0.01;
         const permanentCritMult = state.permanentUpgrades.critRate * 0.01;
         
-        // Final Damage = (Hero Base * Level Multiplier) * (Battle Training Multiplier) * (Runic Altar Multiplier)
         let dmg = p.baseAtk * levelMult * temporalAtkMult * permanentAtkMult * soulChainMult;
-        
-        // Simple ability logic
         if (p.id === 'kaelen-bold') dmg *= (1 + state.currentFloor * 0.05);
         if (p.id === 'oghul') dmg *= 1.2;
 
         const effectiveAtkSpeed = p.atkSpeed * levelMult * temporalSpeedMult * permanentSpeedMult;
         const totalCrit = (p.critChance * levelMult) + temporalCritMult + permanentCritMult;
         
-        // Calculate DPS for display
         const critDmgMult = 1 + totalCrit;
         const charDps = dmg * effectiveAtkSpeed * critDmgMult;
         currentTotalDps += charDps;
 
-        // Mana Generation (5 MP per second)
-        setParagonMp(prev => {
-          const currentMp = prev[p.id] || 0;
-          if (currentMp >= 100) return prev; // Already full, waiting for trigger
+        // Mana Generation
+        const currentMp = internalStateRef.current.paragonMp[p.id] || 0;
+        if (currentMp < 100) {
+          const mpGain = (5 * deltaTime) * state.gameSpeed;
+          internalStateRef.current.paragonMp[p.id] = Math.min(100, currentMp + mpGain);
           
-          const mpGain = (5 * TICK_RATE / 1000) * state.gameSpeed;
-          const nextMp = Math.min(100, currentMp + mpGain);
-          
-          if (nextMp >= 100) {
-            // Trigger Signature Ability
+          if (internalStateRef.current.paragonMp[p.id] >= 100) {
             const starMult = 1 + (owned?.starRating || 0) * 0.25;
             const abilityPower = p.baseAbilityValue * starMult;
             const abilityDmg = charDps * (abilityPower / 100);
@@ -164,44 +165,58 @@ export default function App() {
               triggeredAbilities.push({ name: 'THRONE-BREAKER STRIKE', color: p.color, damage: abilityDmg });
             } else if (p.id === 'silas-vane') {
               triggeredAbilities.push({ name: 'SHADOW HARVEST', color: p.color, damage: abilityDmg });
-              setGoldBonusTimer(5);
+              internalStateRef.current.goldBonusTimer = 5;
             } else if (p.id === 'elara') {
               triggeredAbilities.push({ name: 'LUMINOUS RAIN', color: p.color });
-              // Luminous Rain: 10 hits of 40% DPS in 1s. 
-              // For simplicity in the tick, we'll just add the total damage now or spread it.
-              // Let's add it as a burst for now but visually it will be a volley.
               totalDamageThisTick += abilityDmg * 10;
             } else if (p.id === 'oghul') {
               triggeredAbilities.push({ name: 'MOUNTAIN CRUSHER', color: p.color, damage: abilityDmg });
               setIsTimerPaused(true);
               setTimeout(() => setIsTimerPaused(false), 2000 / state.gameSpeed);
             }
-            return { ...prev, [p.id]: 0 };
+            internalStateRef.current.paragonMp[p.id] = 0;
           }
-          
-          return { ...prev, [p.id]: nextMp };
-        });
+        }
 
         // Attack Timer Logic
         const timer = attackTimersRef.current[p.id] || 0;
-        const progress = (effectiveAtkSpeed * TICK_RATE / 1000) * state.gameSpeed;
+        const progress = (effectiveAtkSpeed * deltaTime) * state.gameSpeed;
         const newTimer = timer + progress;
         
         const attacks = Math.floor(newTimer);
         if (attacks > 0) {
           attackingIds.push(p.id);
+          let combinedDmg = 0;
+          let combinedCrits = 0;
+
           for (let i = 0; i < attacks; i++) {
             const isCrit = Math.random() < totalCrit;
             const finalDmg = dmg * (isCrit ? 2 : 1);
-            totalDamageThisTick += finalDmg;
+            combinedDmg += finalDmg;
+            if (isCrit) combinedCrits++;
+          }
+          totalDamageThisTick += combinedDmg;
 
-            // Add damage number for every attack
+          // Batching logic for high speeds
+          if (state.gameSpeed >= 4) {
             newDamageNumbers.push({
-              id: Math.random() + Date.now() + Math.random(),
-              value: Math.floor(finalDmg),
+              id: Math.random() + now + Math.random() + p.id,
+              value: Math.floor(combinedDmg),
               color: p.color,
-              isCrit
+              isCrit: combinedCrits > 0
             });
+          } else {
+            // Normal behavior: one number per attack
+            for (let i = 0; i < attacks; i++) {
+              const isCrit = Math.random() < totalCrit;
+              const finalDmg = dmg * (isCrit ? 2 : 1);
+              newDamageNumbers.push({
+                id: Math.random() + now + Math.random() + p.id + i,
+                value: Math.floor(finalDmg),
+                color: p.color,
+                isCrit
+              });
+            }
           }
           attackTimersRef.current[p.id] = newTimer - attacks;
         } else {
@@ -210,38 +225,57 @@ export default function App() {
       });
 
       // Apply Ability Damage
-      triggeredAbilities.forEach(ability => {
+      triggeredAbilities.forEach((ability, idx) => {
         if (ability.damage) {
           totalDamageThisTick += ability.damage;
           newDamageNumbers.push({
-            id: Date.now() + Math.random(),
+            id: now + Math.random() + idx + 'ability',
             value: Math.floor(ability.damage),
             color: ability.color,
             isCrit: true
           });
         }
         
-        // Add Ability Name Visual
-        const abilityId = Math.random() + Date.now() + Math.random();
+        const abilityId = Math.random() + now + Math.random() + idx;
         setActiveAbilities(prev => [...prev, { id: abilityId, name: ability.name, color: ability.color }]);
         setTimeout(() => {
           setActiveAbilities(prev => prev.filter(a => a.id !== abilityId));
-        }, 2000);
+        }, 2000 / state.gameSpeed);
 
-        // Screen Effect
         setScreenEffect({ type: 'shake', color: ability.color });
-        setTimeout(() => setScreenEffect(null), 500);
+        setTimeout(() => setScreenEffect(null), 500 / state.gameSpeed);
       });
 
-      // Apply Game Speed to DPS display
-      const dpsWithSpeed = currentTotalDps * state.gameSpeed;
+      // Update internal HP
+      if (!isTransitioningRef.current) {
+        internalStateRef.current.enemyHp -= totalDamageThisTick;
+        if (internalStateRef.current.enemyHp <= 0) {
+          internalStateRef.current.enemyHp = 0;
+          isTransitioningRef.current = true;
+          Promise.resolve().then(() => {
+            const currentState = useGameStore.getState();
+            const goldBonus = internalStateRef.current.goldBonusTimer > 0 ? 1.2 : 1;
+            currentState.defeatEnemy(goldBonus);
+            
+            if (!currentState.autoProgress) {
+              const nextMaxHp = Math.floor(100 * Math.pow(1.15, currentState.currentFloor - 1));
+              internalStateRef.current.enemyHp = nextMaxHp;
+              internalStateRef.current.floorTimer = 60;
+              isTransitioningRef.current = false;
+            }
+          });
+        }
+      }
 
-      if (totalDamageThisTick > 0 || triggeredAbilities.length > 0) {
-        setTotalDps(dpsWithSpeed);
-        
-        // Update individual attack times for animations
+      // Throttled UI Updates (every 100ms)
+      if (now - lastUiUpdate >= 100) {
+        setTotalDps(currentTotalDps);
+        setEnemyHp(internalStateRef.current.enemyHp);
+        setFloorTimer(internalStateRef.current.floorTimer);
+        setParagonMp({ ...internalStateRef.current.paragonMp });
+        setGoldBonusTimer(internalStateRef.current.goldBonusTimer);
+
         if (attackingIds.length > 0) {
-          const now = Date.now();
           setLastAttackTimes(prev => {
             const next = { ...prev };
             attackingIds.forEach(id => { next[id] = now; });
@@ -249,48 +283,21 @@ export default function App() {
           });
         }
 
-        // Throttled hit animation for enemy (200ms)
-        const now = Date.now();
-        if (now - lastHitTimeRef.current > 200) {
+        if (now - lastHitTimeRef.current > (200 / state.gameSpeed) && totalDamageThisTick > 0) {
           setLastHitTime(now);
           lastHitTimeRef.current = now;
         }
 
         if (newDamageNumbers.length > 0) {
-          setDamageNumbers(prev => [...prev.slice(-10), ...newDamageNumbers]);
-        }
-      } else {
-        // Still update DPS display even if no attack this tick
-        setTotalDps(dpsWithSpeed);
-      }
-
-      // 2. Update Enemy HP & Progress
-      setEnemyHp(prev => {
-        if (prev <= 0 || isTransitioningRef.current) return prev; // Guard against multiple triggers
-
-        const next = prev - totalDamageThisTick;
-        if (next <= 0) {
-          isTransitioningRef.current = true; // Lock transition
-          
-          // Enemy Defeated - Schedule store updates to avoid React warning
-          Promise.resolve().then(() => {
-            const currentState = useGameStore.getState();
-            const goldBonus = goldBonusTimer > 0 ? 1.2 : 1;
-            currentState.defeatEnemy(goldBonus);
-            
-            if (!currentState.autoProgress) {
-              // Reset same floor
-              const nextMaxHp = Math.floor(100 * Math.pow(1.15, currentState.currentFloor - 1));
-              setMaxEnemyHp(nextMaxHp);
-              setEnemyHp(nextMaxHp);
-              setFloorTimer(60);
-              isTransitioningRef.current = false; // Unlock manually if not climbing
-            }
+          setDamageNumbers(prev => {
+            // Visual Cap: 8 numbers
+            const combined = [...prev, ...newDamageNumbers];
+            return combined.slice(-8);
           });
-          return 0; // Set to 0 to prevent further damage until reset
         }
-        return next;
-      });
+        
+        lastUiUpdate = now;
+      }
     }, TICK_RATE);
 
     return () => clearInterval(interval);
