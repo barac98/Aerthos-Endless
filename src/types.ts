@@ -9,7 +9,9 @@ export interface Paragon {
   baseAtk: number;
   atkSpeed: number;
   critChance: number;
-  ability: string;
+  specialAbilityName: string;
+  baseAbilityValue: number;
+  abilityDescription: string;
   description: string;
   portrait: string;
   shardCost: number;
@@ -21,6 +23,7 @@ export interface OwnedParagon {
   level: number;
   xp: number;
   nextLevelXp: number;
+  starRating: number;
 }
 
 export type PermanentStatId = 'atkMult' | 'goldMult' | 'shardMult' | 'essenceGain' | 'critRate' | 'speedMult';
@@ -96,6 +99,8 @@ export interface GameStoreActions {
   resetBossDropFlag: () => void;
   defeatEnemy: (goldMultiplier?: number) => void;
   setUpdateAvailable: (available: boolean) => void;
+  ascendParagon: (paragonId: string) => void;
+  levelUpParagon: (paragonId: string) => void;
 }
 
 export type GameStore = GameStoreState & GameStoreActions;
@@ -109,7 +114,9 @@ export const INITIAL_PARAGONS: Paragon[] = [
     baseAtk: 10,
     atkSpeed: 1.0,
     critChance: 0.05,
-    ability: 'DMG scales with floor height (+5%/floor).',
+    specialAbilityName: 'Luminary Strike',
+    baseAbilityValue: 500,
+    abilityDescription: 'DMG scales with floor height (+5%/floor).',
     description: 'A fallen knight of the Luminary Order, seeking redemption in the tower.',
     portrait: 'https://loremflickr.com/1024/1024/knight,fantasy/all',
     shardCost: 0, // Starting character
@@ -123,7 +130,9 @@ export const INITIAL_PARAGONS: Paragon[] = [
     baseAtk: 15,
     atkSpeed: 0.8,
     critChance: 0.1,
-    ability: 'Deals % Max HP damage (Boss Specialist).',
+    specialAbilityName: 'Void Corruption',
+    baseAbilityValue: 200,
+    abilityDescription: 'Deals % Max HP damage (Boss Specialist).',
     description: 'An ancient vampire who feeds on the shadows of the tower.',
     portrait: 'https://loremflickr.com/1024/1024/vampire,fantasy/all',
     shardCost: 50,
@@ -137,7 +146,9 @@ export const INITIAL_PARAGONS: Paragon[] = [
     baseAtk: 8,
     atkSpeed: 1.5,
     critChance: 0.2,
-    ability: 'High Crit Chance and Attack Speed scaling.',
+    specialAbilityName: 'Luminary Flash',
+    baseAbilityValue: 40,
+    abilityDescription: 'High Crit Chance and Attack Speed scaling.',
     description: 'A swift archer from the Silver Woods, trapped in obsidian.',
     portrait: 'https://loremflickr.com/1024/1024/elf,archer,fantasy/all',
     shardCost: 150,
@@ -151,7 +162,9 @@ export const INITIAL_PARAGONS: Paragon[] = [
     baseAtk: 25,
     atkSpeed: 0.5,
     critChance: 0.02,
-    ability: 'Massive AoE ground-slam damage.',
+    specialAbilityName: 'Mountain Slam',
+    baseAbilityValue: 300,
+    abilityDescription: 'Massive AoE ground-slam damage.',
     description: 'A mountain-born giant whose strength shakes the tower foundations.',
     portrait: 'https://loremflickr.com/1024/1024/giant,monster,fantasy/all',
     shardCost: 500,

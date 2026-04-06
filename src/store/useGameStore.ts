@@ -38,8 +38,8 @@ const mockStorage = {
           totalResets: 0,
           activeTeam: ['silas-vane', 'kaelen-bold', null, null],
           ownedParagons: [
-            { id: 'kaelen-bold', level: 1, xp: 0, nextLevelXp: 100 },
-            { id: 'silas-vane', level: 1, xp: 0, nextLevelXp: 100 }
+            { id: 'kaelen-bold', level: 1, xp: 0, nextLevelXp: 100, starRating: 0 },
+            { id: 'silas-vane', level: 1, xp: 0, nextLevelXp: 100, starRating: 0 }
           ],
           temporalUpgrades: { atk: 1, speed: 1, crit: 1, gold: 1 },
           permanentUpgrades: {
@@ -97,7 +97,7 @@ export const useGameStore = create<GameStore>()(
       highestFloor: 1,
       totalResets: 0,
       activeTeam: ['kaelen-bold', null, null, null],
-      ownedParagons: [{ id: 'kaelen-bold', level: 1, xp: 0, nextLevelXp: 100 }],
+      ownedParagons: [{ id: 'kaelen-bold', level: 1, xp: 0, nextLevelXp: 100, starRating: 0 }],
       temporalUpgrades: { atk: 1, speed: 1, crit: 1, gold: 1 },
       permanentUpgrades: {
         atkMult: 1,
@@ -161,7 +161,41 @@ export const useGameStore = create<GameStore>()(
 
         return {
           soulShards: state.soulShards - paragon.shardCost,
-          ownedParagons: [...state.ownedParagons, { id: paragonId, level: 1, xp: 0, nextLevelXp: 100 }],
+          ownedParagons: [...state.ownedParagons, { id: paragonId, level: 1, xp: 0, nextLevelXp: 100, starRating: 0 }],
+          lastSaved: Date.now()
+        };
+      }),
+
+      ascendParagon: (paragonId) => set((state) => {
+        const owned = state.ownedParagons.find(p => p.id === paragonId);
+        if (!owned || owned.starRating >= 5) return state;
+
+        const cost = Math.floor(10 * Math.pow(2, owned.starRating));
+
+        if (state.soulShards < cost) return state;
+
+        return {
+          soulShards: state.soulShards - cost,
+          ownedParagons: state.ownedParagons.map(p => 
+            p.id === paragonId ? { ...p, starRating: p.starRating + 1 } : p
+          ),
+          lastSaved: Date.now()
+        };
+      }),
+
+      levelUpParagon: (paragonId) => set((state) => {
+        const owned = state.ownedParagons.find(op => op.id === paragonId);
+        if (!owned) return state;
+
+        const cost = Math.floor(10 * Math.pow(1.15, owned.level));
+
+        if (state.gold < cost) return state;
+
+        return {
+          gold: state.gold - cost,
+          ownedParagons: state.ownedParagons.map(op => 
+            op.id === paragonId ? { ...op, level: op.level + 1 } : op
+          ),
           lastSaved: Date.now()
         };
       }),
@@ -245,7 +279,7 @@ export const useGameStore = create<GameStore>()(
           while (newXp >= nextReq) {
             newXp -= nextReq;
             newLevel++;
-            nextReq = Math.floor(100 * Math.pow(1.5, newLevel - 1));
+            nextReq = Math.floor(100 * Math.pow(1.25, newLevel - 1));
           }
 
           return {
@@ -345,7 +379,7 @@ export const useGameStore = create<GameStore>()(
         const goldGain = Math.floor(state.currentFloor * 10 * (1 + state.permanentUpgrades.goldMult * 0.1) * temporalGoldMult * goldMultiplier);
         
         // 2. XP Distribution
-        const xpGain = isBoss ? 50 : 5;
+        const xpGain = Math.floor(state.currentFloor * 1.5);
         
         // 3. Shard Drop Logic
         let shardReward = 0;
@@ -386,7 +420,7 @@ export const useGameStore = create<GameStore>()(
           while (newXp >= nextReq) {
             newXp -= nextReq;
             newLevel++;
-            nextReq = Math.floor(100 * Math.pow(1.5, newLevel - 1));
+            nextReq = Math.floor(100 * Math.pow(1.25, newLevel - 1));
           }
           return { ...p, xp: newXp, level: newLevel, nextLevelXp: nextReq };
         });
@@ -425,13 +459,14 @@ export const useGameStore = create<GameStore>()(
         
         let nextState = { ...persistedState };
 
-        // Ensure ownedParagons have XP fields
+        // Ensure ownedParagons have XP and starRating fields
         if (nextState.ownedParagons) {
           nextState.ownedParagons = nextState.ownedParagons.map((p: any) => ({
             ...p,
             level: p.level || 1,
             xp: p.xp || 0,
-            nextLevelXp: p.nextLevelXp || Math.floor(100 * Math.pow(1.5, (p.level || 1) - 1))
+            nextLevelXp: p.nextLevelXp || Math.floor(100 * Math.pow(1.25, (p.level || 1) - 1)),
+            starRating: p.starRating || 0
           }));
         }
 

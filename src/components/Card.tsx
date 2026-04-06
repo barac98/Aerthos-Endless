@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'motion/react';
+import { Star } from 'lucide-react';
 import { Paragon } from '../types';
 
 interface CardProps {
@@ -13,7 +14,11 @@ interface CardProps {
   level?: number;
   xp?: number;
   nextLevelXp?: number;
+  starRating?: number;
+  soulShards?: number;
+  onAscend?: () => void;
   biomeColor?: string;
+  onClick?: () => void;
 }
 
 export const Card: React.FC<CardProps> = ({ 
@@ -27,7 +32,11 @@ export const Card: React.FC<CardProps> = ({
   level = 1,
   xp = 0,
   nextLevelXp = 100,
-  biomeColor = '#00FFFF'
+  starRating = 0,
+  soulShards = 0,
+  onAscend,
+  biomeColor = '#00FFFF',
+  onClick
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -53,13 +62,23 @@ export const Card: React.FC<CardProps> = ({
 
   const handleFlip = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsFlipped(!isFlipped);
+    if (onClick) {
+      onClick();
+    } else {
+      setIsFlipped(!isFlipped);
+    }
   };
 
   const levelMult = 1 + (level - 1) * 0.1;
+  const starMult = 1 + (starRating * 0.25);
   const scaledAtk = paragon.baseAtk * levelMult;
   const scaledSpeed = paragon.atkSpeed * levelMult;
   const scaledCrit = paragon.critChance * levelMult;
+  const abilityPower = Math.floor(paragon.baseAbilityValue * starMult);
+  
+  const ascensionCosts = [10, 25, 50, 100, 250];
+  const nextStarCost = starRating < 5 ? ascensionCosts[starRating] : null;
+  const canAscend = nextStarCost !== null && soulShards >= nextStarCost;
   
   if (variant === 'small') {
     return (
@@ -92,8 +111,19 @@ export const Card: React.FC<CardProps> = ({
                 referrerPolicy="no-referrer"
               />
               
+              {/* Stars */}
+              <div className="absolute top-0.5 right-1 flex gap-0.5 z-10">
+                {[...Array(5)].map((_, i) => (
+                  <Star 
+                    key={i} 
+                    size={6} 
+                    className={i < starRating ? "fill-luminary text-luminary glow-cyan" : "text-shadow-magic opacity-30"} 
+                  />
+                ))}
+              </div>
+
               {/* Level Badge */}
-              <div className="absolute top-1 right-1 bg-black/80 px-1 rounded border border-white/10 z-10">
+              <div className="absolute top-1 left-1 bg-black/80 px-1 rounded border border-white/10 z-10">
                 <span className="text-[6px] font-bold text-luminary">Lv.{level}</span>
               </div>
 
@@ -112,9 +142,9 @@ export const Card: React.FC<CardProps> = ({
               </div>
 
               {/* XP Bar */}
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/50">
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#050505]">
                 <motion.div 
-                  className="h-full bg-purple-500 shadow-[0_0_5px_rgba(168,85,247,0.8)]"
+                  className="h-full bg-[#A020F0] shadow-[0_0_8px_rgba(160,32,240,0.8)]"
                   initial={{ width: 0 }}
                   animate={{ width: `${(xp / nextLevelXp) * 100}%` }}
                   transition={{ duration: 0.3 }}
@@ -133,19 +163,17 @@ export const Card: React.FC<CardProps> = ({
                   <span className="text-white/50">ATK</span>
                   <div className="flex items-center gap-0.5">
                     <span className={level > 1 ? "text-green-400" : "text-white"}>{Math.floor(scaledAtk)}</span>
-                    {level > 1 && <span className="text-green-400 text-[4px]">+</span>}
                   </div>
                 </div>
                 <div className="flex justify-between border-b border-white/5">
-                  <span className="text-white/50">SPD</span>
+                  <span className="text-white/50">PWR</span>
                   <div className="flex items-center gap-0.5">
-                    <span className={level > 1 ? "text-green-400" : "text-white"}>{scaledSpeed.toFixed(1)}</span>
-                    {level > 1 && <span className="text-green-400 text-[4px]">+</span>}
+                    <span className={starRating > 0 ? "text-luminary" : "text-white"}>{abilityPower}</span>
                   </div>
                 </div>
               </div>
               <div className="mt-1">
-                <p className="text-[5px] text-white/80 leading-tight italic truncate">"{paragon.ability}"</p>
+                <p className="text-[5px] text-white/80 leading-tight italic truncate">"{paragon.specialAbilityName}"</p>
               </div>
             </div>
           </motion.div>
@@ -178,8 +206,22 @@ export const Card: React.FC<CardProps> = ({
               referrerPolicy="no-referrer"
             />
 
+            {/* Stars */}
+            <div className="absolute top-2 right-2 flex gap-1 z-10">
+              {[...Array(5)].map((_, i) => (
+                <Star 
+                  key={i} 
+                  size={16} 
+                  className={i < starRating 
+                    ? "fill-luminary text-luminary drop-shadow-[0_0_8px_rgba(0,255,255,0.8)]" 
+                    : "text-shadow-magic opacity-20"
+                  } 
+                />
+              ))}
+            </div>
+
             {/* Level Badge */}
-            <div className="absolute top-2 right-2 bg-black/90 px-2.5 py-1 rounded-md border-2 border-white/30 z-10 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
+            <div className="absolute top-2 left-2 bg-black/90 px-2.5 py-1 rounded-md border-2 border-white/30 z-10 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
               <span className="text-sm font-bold text-luminary tracking-widest drop-shadow-sm">Lv.{level}</span>
             </div>
 
@@ -215,9 +257,9 @@ export const Card: React.FC<CardProps> = ({
             </div>
 
             {/* XP Bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-2 bg-black/50">
+            <div className="absolute bottom-0 left-0 right-0 h-2 bg-[#050505]">
               <motion.div 
-                className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.8)]"
+                className="h-full bg-[#A020F0] shadow-[0_0_12px_rgba(160,32,240,0.8)]"
                 initial={{ width: 0 }}
                 animate={{ width: `${(xp / nextLevelXp) * 100}%` }}
                 transition={{ duration: 0.3 }}
@@ -256,45 +298,85 @@ export const Card: React.FC<CardProps> = ({
 
         {/* Back */}
         <div 
-          className="absolute inset-0 backface-hidden obsidian-border rounded-xl bg-obsidian p-2 sm:p-6 flex flex-col rotate-y-180 cursor-pointer overflow-hidden"
+          className="absolute inset-0 backface-hidden obsidian-border rounded-xl bg-obsidian p-4 sm:p-6 flex flex-col rotate-y-180 cursor-pointer overflow-hidden"
           style={{ transform: 'rotateY(180deg)' }}
           onClick={handleFlip}
         >
-          <div className="flex justify-between items-start mb-1 sm:mb-4">
-            <h3 className="text-xs sm:text-lg font-bold text-luminary truncate">{paragon.name}</h3>
-          </div>
-
-          <div className="space-y-0.5 sm:space-y-3 font-runic text-[9px] sm:text-sm">
-            <div className="flex justify-between border-b border-white/5 pb-0.5 sm:pb-1">
-              <span className="text-white/50">ATK</span>
-              <div className="flex items-center gap-1">
-                <span className={level > 1 ? "text-green-400" : "text-white"}>{Math.floor(scaledAtk)}</span>
-                {level > 1 && <span className="text-green-400 text-[8px]">+</span>}
-              </div>
-            </div>
-            <div className="flex justify-between border-b border-white/5 pb-0.5 sm:pb-1">
-              <span className="text-white/50">SPD</span>
-              <div className="flex items-center gap-1">
-                <span className={level > 1 ? "text-green-400" : "text-white"}>{scaledSpeed.toFixed(1)}x</span>
-                {level > 1 && <span className="text-green-400 text-[8px]">+</span>}
-              </div>
-            </div>
-            <div className="flex justify-between border-b border-white/5 pb-0.5 sm:pb-1">
-              <span className="text-white/50">CRIT</span>
-              <div className="flex items-center gap-1">
-                <span className={level > 1 ? "text-green-400" : "text-white"}>{(scaledCrit * 100).toFixed(0)}%</span>
-                {level > 1 && <span className="text-green-400 text-[8px]">+</span>}
-              </div>
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-lg font-bold text-luminary truncate">{paragon.name}</h3>
+            <div className="flex gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={10} className={i < starRating ? "fill-luminary text-luminary" : "text-white/10"} />
+              ))}
             </div>
           </div>
 
-          <div className="mt-1 sm:mt-6">
-            <h4 className="text-[7px] sm:text-[10px] uppercase text-luminary mb-0.5 sm:mb-1 tracking-widest">Special Ability</h4>
-            <p className="text-[8px] sm:text-xs text-white/80 leading-tight sm:leading-relaxed italic line-clamp-3">"{paragon.ability}"</p>
+          <div className="space-y-4">
+            {/* Battle Stats Section */}
+            <div>
+              <h4 className="text-[10px] uppercase text-white/30 mb-2 tracking-widest border-b border-white/5">Battle Stats</h4>
+              <div className="space-y-2 font-runic text-sm">
+                <div className="flex justify-between">
+                  <span className="text-white/50">ATK</span>
+                  <div className="flex items-center gap-1">
+                    <span className={level > 1 ? "text-green-400" : "text-white"}>{Math.floor(scaledAtk)}</span>
+                    {level > 1 && <span className="text-green-400 text-[8px]">+</span>}
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">SPD</span>
+                  <div className="flex items-center gap-1">
+                    <span className={level > 1 ? "text-green-400" : "text-white"}>{scaledSpeed.toFixed(1)}x</span>
+                    {level > 1 && <span className="text-green-400 text-[8px]">+</span>}
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">CRIT</span>
+                  <div className="flex items-center gap-1">
+                    <span className={level > 1 ? "text-green-400" : "text-white"}>{(scaledCrit * 100).toFixed(0)}%</span>
+                    {level > 1 && <span className="text-green-400 text-[8px]">+</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Transcendence Section */}
+            <div>
+              <h4 className="text-[10px] uppercase text-luminary mb-2 tracking-widest border-b border-luminary/20">Transcendence</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-white">{paragon.specialAbilityName}</span>
+                  <span className="text-sm font-runic text-luminary glow-cyan">PWR {abilityPower}</span>
+                </div>
+                <p className="text-[10px] text-white/70 leading-relaxed italic">"{paragon.abilityDescription}"</p>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-auto pt-1 sm:pt-4 border-t border-white/10">
-            <p className="text-[7px] sm:text-[10px] text-white/40 leading-tight line-clamp-2">{paragon.description}</p>
+          {/* Ascend Button */}
+          {starRating < 5 && (
+            <div className="mt-auto pt-4">
+              {canAscend ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAscend?.();
+                  }}
+                  className="w-full py-2 bg-luminary text-obsidian font-bold rounded-md uppercase tracking-widest text-xs hover:bg-white transition-colors shadow-[0_0_15px_rgba(0,255,255,0.4)]"
+                  style={{ touchAction: 'manipulation', userSelect: 'none' }}
+                >
+                  Ascend ({nextStarCost} Shards)
+                </button>
+              ) : (
+                <div className="w-full py-2 bg-white/5 text-white/20 font-bold rounded-md uppercase tracking-widest text-[10px] text-center border border-white/5">
+                  Need {nextStarCost} Shards
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <p className="text-[10px] text-white/40 leading-tight line-clamp-2">{paragon.description}</p>
           </div>
         </div>
       </motion.div>

@@ -13,6 +13,7 @@ import { RecruitScreen } from './components/screens/RecruitScreen';
 import { AltarScreen } from './components/screens/AltarScreen';
 import { LoreScreen } from './components/screens/LoreScreen';
 import { SettingsScreen } from './components/screens/SettingsScreen';
+import { HeroSanctum } from './components/HeroSanctum';
 import { StatArchive } from './components/StatArchive';
 import { WelcomeBackModal } from './components/WelcomeBackModal';
 import { NewVersionModal } from './components/NewVersionModal';
@@ -46,6 +47,7 @@ export default function App() {
   // Offline Progress State
   const [offlineRewards, setOfflineRewards] = useState<{ gold: number; xp: number; kills: number; timeAway: number } | null>(null);
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
+  const [selectedParagonId, setSelectedParagonId] = useState<string | null>(null);
 
   const isTransitioningRef = useRef(false);
 
@@ -154,19 +156,23 @@ export default function App() {
           
           if (nextMp >= 100) {
             // Trigger Signature Ability
+            const starMult = 1 + (owned?.starRating || 0) * 0.25;
+            const abilityPower = p.baseAbilityValue * starMult;
+            const abilityDmg = charDps * (abilityPower / 100);
+
             if (p.id === 'kaelen-bold') {
-              triggeredAbilities.push({ name: 'THRONE-BREAKER STRIKE', color: p.color, damage: charDps * 5 });
+              triggeredAbilities.push({ name: 'THRONE-BREAKER STRIKE', color: p.color, damage: abilityDmg });
             } else if (p.id === 'silas-vane') {
-              triggeredAbilities.push({ name: 'SHADOW HARVEST', color: p.color, damage: charDps * 2 });
+              triggeredAbilities.push({ name: 'SHADOW HARVEST', color: p.color, damage: abilityDmg });
               setGoldBonusTimer(5);
             } else if (p.id === 'elara') {
               triggeredAbilities.push({ name: 'LUMINOUS RAIN', color: p.color });
               // Luminous Rain: 10 hits of 40% DPS in 1s. 
               // For simplicity in the tick, we'll just add the total damage now or spread it.
               // Let's add it as a burst for now but visually it will be a volley.
-              totalDamageThisTick += charDps * 0.4 * 10;
+              totalDamageThisTick += abilityDmg * 10;
             } else if (p.id === 'oghul') {
-              triggeredAbilities.push({ name: 'MOUNTAIN CRUSHER', color: p.color, damage: charDps * 3 });
+              triggeredAbilities.push({ name: 'MOUNTAIN CRUSHER', color: p.color, damage: abilityDmg });
               setIsTimerPaused(true);
               setTimeout(() => setIsTimerPaused(false), 2000 / state.gameSpeed);
             }
@@ -341,12 +347,18 @@ export default function App() {
               screenEffect={screenEffect}
               gameSpeed={store.gameSpeed}
               onSetGameSpeed={store.setGameSpeed}
+              onSelectParagon={setSelectedParagonId}
             />
           )}
 
           {activeTab === 'training' && <TrainingScreen />}
 
-          {activeTab === 'team' && <TeamScreen paragonMp={paragonMp} />}
+          {activeTab === 'team' && (
+            <TeamScreen 
+              paragonMp={paragonMp} 
+              onSelectParagon={setSelectedParagonId}
+            />
+          )}
 
           {activeTab === 'recruit' && <RecruitScreen />}
 
@@ -394,6 +406,16 @@ export default function App() {
       <div className="fixed bottom-1 right-1 pointer-events-none z-[1000] opacity-30">
         <span className="text-[10px] font-mono tracking-widest text-white/50">v{APP_VERSION}</span>
       </div>
+
+      {/* Hero Sanctum Overlay */}
+      <AnimatePresence>
+        {selectedParagonId && (
+          <HeroSanctum 
+            paragonId={selectedParagonId} 
+            onClose={() => setSelectedParagonId(null)} 
+          />
+        )}
+      </AnimatePresence>
 
       <SpeedInsights />
     </div>

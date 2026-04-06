@@ -7,9 +7,10 @@ import { BIOMES } from '../../constants';
 
 interface TeamScreenProps {
   paragonMp: Record<string, number>;
+  onSelectParagon: (id: string) => void;
 }
 
-export const TeamScreen: React.FC<TeamScreenProps> = ({ paragonMp }) => {
+export const TeamScreen: React.FC<TeamScreenProps> = ({ paragonMp, onSelectParagon }) => {
   const store = useGameStore();
   const biomeIndex = Math.min(Math.floor((store.currentFloor - 1) / 50), BIOMES.length - 1);
   const currentBiome = BIOMES[biomeIndex];
@@ -45,7 +46,11 @@ export const TeamScreen: React.FC<TeamScreenProps> = ({ paragonMp }) => {
             level={ownedData?.level}
             xp={ownedData?.xp}
             nextLevelXp={ownedData?.nextLevelXp}
+            starRating={ownedData?.starRating}
+            soulShards={store.soulShards}
+            onAscend={() => store.ascendParagon(p.id)}
             biomeColor={currentBiome.color}
+            onClick={() => onSelectParagon(p.id)}
             onToggle={() => {
               const slotIndex = store.activeTeam.indexOf(p.id);
               if (slotIndex !== -1) {

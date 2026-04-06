@@ -20,6 +20,7 @@ interface TowerScreenProps {
   screenEffect: { type: 'flash' | 'shake'; color: string } | null;
   gameSpeed: number;
   onSetGameSpeed: (speed: number) => void;
+  onSelectParagon: (id: string) => void;
 }
 
 export const TowerScreen: React.FC<TowerScreenProps> = ({
@@ -36,6 +37,7 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
   screenEffect,
   gameSpeed,
   onSetGameSpeed,
+  onSelectParagon,
 }) => {
   const store = useGameStore();
   const biomeIndex = Math.min(Math.floor((store.currentFloor - 1) / 50), BIOMES.length - 1);
@@ -355,7 +357,10 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                 }
                 const ownedData = store.ownedParagons.find(op => op.id === p.id);
                 return (
-                  <div key={p.id} className="flex flex-col items-center gap-0.5 group h-full min-h-0">
+                  <div 
+                    key={p.id} 
+                    className="flex flex-col items-center gap-0.5 group h-full min-h-0"
+                  >
                     <div className="relative h-[85%] aspect-[2/3]">
                       <Card 
                         paragon={p} 
@@ -366,7 +371,9 @@ export const TowerScreen: React.FC<TowerScreenProps> = ({
                         level={ownedData?.level}
                         xp={ownedData?.xp}
                         nextLevelXp={ownedData?.nextLevelXp}
+                        starRating={ownedData?.starRating}
                         biomeColor={currentBiome.color}
+                        onClick={() => onSelectParagon(p.id)}
                       />
                     </div>
                     <div className="flex items-center gap-1">
